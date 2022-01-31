@@ -6,11 +6,17 @@ import * as React from 'react'
 function Greeting({initialName = ''}) {
   // 🐨 initialize the state to the value from localStorage
   // 💰 window.localStorage.getItem('name') ?? initialName
+  // ?? is like ||, except it considers only null and undefined, rather than falsy (ie '' and 0 WILL short-circut evaluate)
+  initialName = window.localStorage.getItem('name') ?? initialName
+
   const [name, setName] = React.useState(initialName)
 
   // 🐨 Here's where you'll use `React.useEffect`.
   // The callback should set the `name` in localStorage.
   // 💰 window.localStorage.setItem('name', name)
+
+  // I guess we are using localStorate as our state manager??
+  window.localStorage.setItem('name', name)
 
   function handleChange(event) {
     setName(event.target.value)
