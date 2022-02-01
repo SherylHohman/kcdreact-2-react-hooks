@@ -6,9 +6,41 @@ import * as React from 'react'
 function Greeting({initialName = ''}) {
   // 🐨 initialize the state to the value from localStorage
 
-  initialName = window.localStorage.getItem('name') ?? initialName
-  const [name, setName] = React.useState(initialName)
-  // Note: above 2 LINES is run at every render.
+  // ----
+
+  // 02. Extra-Credit-1
+  //   💯 lazy state initialization
+
+  //   Right now, every time our component function is run,
+  //      our function reads from localStorage.
+  //      This is problematic because it could be a performance bottleneck
+  //      (reading from localStorage can be slow). And what’s more
+  //      we only actually need to know the value from localStorage
+  //      the first time this component is rendered!
+  //      So the additional reads are wasted effort.
+
+  //   To avoid this problem, React’s useState hook allows you to
+  //    pass a function instead of the actual value, and then it will
+  //    only call that function to get the state value when the component is
+  //    rendered the first time.
+  //    So you can go from this:
+  //        React.useState(someExpensiveComputation())
+  //    To this:
+  //        React.useState(() => someExpensiveComputation())
+
+  //   And the someExpensiveComputation function will only be called when it’s needed!
+
+  //   Make the React.useState call use lazy initialization to
+  //        avoid a performance bottleneck of reading into localStorage on every render.
+
+  //   Learn more about lazy state initialization:
+  //        https://kentcdodds.com/blog/use-state-lazy-initialization-and-function-updates
+
+  //
+  // ----
+  //
+
+  // SH Note: below 2 LINES are run at every render.
   // I guess that will be addressed in an extra-credit??
   // Ideally,
   // We want to read from Storage at time of mount only.
@@ -18,10 +50,14 @@ function Greeting({initialName = ''}) {
   //  BUT we want the call to read ...localStorage.getItem()...
   //    to be run ONCE (at/per componnent mount)
 
-  // Even if I write it as:
-  // const [name, setName] = React.useState(
-  //   window.localStorage.getItem('name') ?? initialName
-  // )
+  /* initialName = window.localStorage.getItem('name') ?? initialName
+  const [name, setName] = React.useState(initialName)
+  */
+
+  // Even re-written as:
+  const [name, setName] = React.useState(
+    window.localStorage.getItem('name') ?? initialName,
+  )
   // it is EXACTLY THE SAME.
   //    The CALL to window.localStorage.getItem()...
   //    is exectued at EVERY RENDER.
@@ -36,6 +72,7 @@ function Greeting({initialName = ''}) {
   // const [name, setName] = React.useState(
   //   window.localStorage.getItem('name') ?? initialName
   // )
+  //
 
   /* window.localStorage.setItem('name', name) */
   // Above is WRONG. It creates side effects.
@@ -48,10 +85,11 @@ function Greeting({initialName = ''}) {
   // BAD:  window.localStorage.setItem('name', name)
   // Think of localStorage as data fetching. It is.
   //    AND it is Asynch!! So def. data fetching. It takes time.
+
   // Rem useEffect is like combo of:
   //    componentDidMount, componentWillUpdate, componentWillUnmount
   React.useEffect(() => {
-    return window.localStorage.setItem('name', name)
+    window.localStorage.setItem('name', name)
   })
 
   // useEffect is like componentDidMount, componentDidUpdate, AND componentWillUnmount
