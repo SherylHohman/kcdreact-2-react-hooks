@@ -38,9 +38,9 @@ function Greeting({initialName = ''}) {
   //    is exectued at EVERY RENDER.
   //  Perhaps?? ()=>{window.localStorage.getItem()...}
   //    does the trick??
+  //  If not, I suppose I'll learn soon the PROPER way to address the issue.
   //  If so, I need to gain a better, immediate deep, visceral UNDERSTANDING of
   //    that. (Not just a wrote pattern that I blindly mimic)
-  //  If not, I suppose I'll learn soon how to address the issue.
 
   // 🐨 Here's where you'll use `React.useEffect`.
   // The callback should set the `name` in localStorage.
@@ -72,7 +72,7 @@ function Greeting({initialName = ''}) {
 
   // BAD:  window.localStorage.setItem('name', name)
   React.useEffect(() => {
-    return window.localStorage.setItem('name', name)
+    window.localStorage.setItem('name', name)
   })
 
   // useEffect is like componentDidMount, componentDidUpdate, AND componentWillUnmount
