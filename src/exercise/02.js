@@ -14,14 +14,21 @@ function Greeting({initialName = ''}) {
   // Ideally,
   // We want to do this at time of mount only.
   //   like data fetching
+  // Except localStorage.getItem is SYNCHRONOUS, data fetching is Asynchronous!
 
   const [name, setName] = React.useState(initialName)
+  // useState is Asynchronous
 
   // Above 2 lines are the exact SAME as:
   //
   // const [name, setName] = React.useState(
-  //   window.localStorage.getItem('name') ?? initialName
+  //   window.localStorage.getItem('name') ?? initialName,
   // )
+  //   // WHY is a comma added to the end of the above line ???
+  //   // Is it because this linter deletes all semi-colons?
+  //   // So when critical necessary, a `,` is used to separate
+  //   // indicate end of statement when it otherwise would create an issue/conflict
+  //   // if the `;` were missing?  IIRC, commas are statement separators, though rarely/never used as such. Until now, anyway, if that is indeed its purpose.
 
   //  TBF, the useState call is also, and must be,
   //     run at every render!

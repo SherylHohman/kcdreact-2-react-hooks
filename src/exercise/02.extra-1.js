@@ -4,10 +4,7 @@
 import * as React from 'react'
 
 function Greeting({initialName = ''}) {
-  // 🐨 initialize the state to the value from localStorage
-
   // ----
-
   // 02. Extra-Credit-1
   //   💯 lazy state initialization
 
@@ -35,59 +32,46 @@ function Greeting({initialName = ''}) {
 
   //   Learn more about lazy state initialization:
   //        https://kentcdodds.com/blog/use-state-lazy-initialization-and-function-updates
-
-  //
   // ----
   //
 
+  // 🐨 initialize the state to the value from localStorage
+
   // SH Note: below 2 LINES are run at every render.
-  // I guess that will be addressed in an extra-credit??
-  // Ideally,
   // We want to read from Storage at time of mount only.
   //   like data fetching
+  // Except localStorage.getItem is SYNCHRONOUS, data fetching is Asynchronous!
+
   //  TBF, the useState call is also, and must be,
   //     run at every render, too!
   //  BUT we want the call to read ...localStorage.getItem()...
-  //    to be run ONCE (at/per componnent mount)
+  //    to be run ONCE (at/per component mount)
 
-  /* initialName = window.localStorage.getItem('name') ?? initialName
+  // Think of localStorage as data fetching. It is.
+  //    Except that Storage.getItem()/setItem is Synch!! http calls are Asynch.
+
+  initialName = window.localStorage.getItem('name') ?? initialName
+
   const [name, setName] = React.useState(initialName)
-  */
+  // useState is Asynchronous
 
   // Even re-written as:
-  const [name, setName] = React.useState(
-    window.localStorage.getItem('name') ?? initialName,
-  )
+  //   const [name, setName] = React.useState(
+  //     window.localStorage.getItem('name') ?? initialName,
+  //   )
+
   // it is EXACTLY THE SAME.
   //    The CALL to window.localStorage.getItem()...
   //    is exectued at EVERY RENDER.
-  //  Perhaps?? ()=>{window.localStorage.getItem()...}
-  //    does the trick??
-  //  If not, I suppose I'll learn soon the PROPER way to address the issue.
-  //  If so, I need to gain a better, immediate deep, visceral UNDERSTANDING of
-  //    that. (Not just a wrote pattern that I blindly mimic)
-
-  // Above 2 lines are the exact SAME as:
-  //
-  // const [name, setName] = React.useState(
-  //   window.localStorage.getItem('name') ?? initialName
-  // )
-  //
-
-  /* window.localStorage.setItem('name', name) */
-  // Above is WRONG. It creates side effects.
-  // Maybe look it as comparable to controlled inputs.
-  //   where the value prop is set equal to the state variable
-  //   in order to keep DOM synched with react state var,
-  //   and so React component / state is in charge of that value.
-  //   Is that a fair mental model??
 
   // BAD:  window.localStorage.setItem('name', name)
-  // Think of localStorage as data fetching. It is.
-  //    AND it is Asynch!! So def. data fetching. It takes time.
-
+  // setting this state-like persistent value directly can cause synch errors.
+  //  must use useEffect
+  //      something, something: dependencies, dependency array, side effects
+  //      data synch between re-renders. Trigger render if something changes.
   // Rem useEffect is like combo of:
   //    componentDidMount, componentWillUpdate, componentWillUnmount
+  //    and localStorage is like persistent "state".
   React.useEffect(() => {
     window.localStorage.setItem('name', name)
   })
