@@ -4,10 +4,10 @@
 import * as React from 'react'
 
 function Greeting({initialName = ''}) {
-  /*Previous commit has examples of 4 different ways to
+  /*Previous couple commits have examples of 4 different ways to
         write the code to use lazy initialization with useState
         plus 2 ways that do NOT use lazy initialization, which can be expensive.
-    that commit has Experimental code that is good for
+    Has Experimental code that is good for
     LEARNING, Comparing and Contrasting only.
   */
 
@@ -44,44 +44,25 @@ function Greeting({initialName = ''}) {
 
   // 🐨 initialize the state to the value from localStorage
 
+  /*
   // Do NOT do this. It is expensive NOT lazy initialization.
   // It unnecessarily reads the Storage at every render.
   // It should only read it at page reload (Component Mount)
-  initialName_EXPENSIVE = window.localStorage.getItem('name') ?? initialName
+
+  const initialName_EXPENSIVE =
+    window.localStorage.getItem('name') ?? initialName
   const [name_EXPENSIVE, setName_EXPENSIVE] = React.useState(initialName)
-
-  // 1  ok to use. useState decides whether to invoke readInitialName,
-  //        and hence whether or not to call localStorage.getItem()
-  function readInitialName() {
-    return window.localStorage.getItem('name') ?? initialName
-  }
-  const [name, setName] = React.useState(readInitialName)
-
-  // 3
-  // OR cobine both into a 1-liner, using an anon function:
-  const [name3, setName3] = React.useState(() => {
-    return window.localStorage.getItem('name3') ?? initialName
-  })
+  */
 
   // 4
-  // OR use anon func with an arrow function implicit return
-  //(CANNOT use `{}` unless also use `return`)
-  const [name4, setName4] = React.useState(
+  const [name, setName] = React.useState(
     () => window.localStorage.getItem('name4') ?? initialName,
   )
 
-  // BAD:  window.localStorage.setItem('name', name)
-  // setting this state-like persistent value directly can cause synch errors.
-  //  must use useEffect
-  //      something, something: dependencies, dependency array, side effects
-  //      data synch between re-renders. Trigger render if something changes.
-
-  // Rem useEffect is like combo of:
-  //    componentDidMount, componentWillUpdate, componentWillUnmount
-  //    and localStorage is like persistent "state".
-  React.useEffect(() => {
-    window.localStorage.setItem('name', name)
-  })
+  // BAD: do NOT call Storage.setItem() directly!
+  //    must use useEffect, because Storage.setItem() has sideEffects.
+  // GOOD: useEffect callback
+  React.useEffect(() => window.localStorage.setItem('name', name))
 
   // useEffect is like componentDidMount, componentDidUpdate, AND componentWillUnmount
   //  ("Effects", useEffects happen AFTER RENDER, for purposeful side effects)
@@ -89,9 +70,6 @@ function Greeting({initialName = ''}) {
 
   function handleChange(event) {
     setName(event.target.value)
-    // for comparison
-    setName3(event.target.value)
-    setName4(event.target.value)
   }
 
   return (
