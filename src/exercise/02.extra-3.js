@@ -11,13 +11,25 @@ function Greeting({initialName = ''}) {
 
   //   The best part of hooks is that if you find a bit of logic inside your
   //   component function that you think would be useful elsewhere,
-  //   you can put that in another function and
-  //   call it from the components that need it (just like regular JavaScript).
+  //   you can put that in another function and call it from
+  //   the components that need it (just like regular JavaScript).
   //   These functions you create are called “custom hooks”.
 
   //   Create a custom hook called useLocalStorageState for reusability of all
   //   this logic.
 
+  // ----
+  // INSTRUCTIONS UNCLEAR
+  //  "all this logic" ?
+  //  exactly what logic do we want to extract and (pretend) reuse?
+  //  Purpose is unclear. So exercise is unclear.
+  //
+  //  TODO: when figure out the goal, consider a PR to clarify the instructions!
+  //
+  //  Think I need to look at the solution to figure out what they are getting at!
+  //    what parts, exactly, do we need to extract.
+  //    perhaps a use case, I could deduce the parts that need extracted.
+  //    But nothing..
   // ----
 
   // lazy initialization via callback (here as an anon function def)
