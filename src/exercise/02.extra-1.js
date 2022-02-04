@@ -56,7 +56,7 @@ function Greeting({initialName = ''}) {
 
   // 4
   const [name, setName] = React.useState(
-    () => window.localStorage.getItem('name4') ?? initialName,
+    () => window.localStorage.getItem('name') ?? initialName,
   )
 
   // BAD: do NOT call Storage.setItem() directly!

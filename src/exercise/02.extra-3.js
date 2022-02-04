@@ -34,7 +34,7 @@ function Greeting({initialName = ''}) {
 
   // lazy initialization via callback (here as an anon function def)
   const [name, setName] = React.useState(
-    () => window.localStorage.getItem('name4') ?? initialName,
+    () => window.localStorage.getItem('name') ?? initialName,
   )
 
   // useEffect for side effects (save item to localStorage)(?prevent stale data?)
