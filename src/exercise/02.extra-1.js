@@ -62,7 +62,33 @@ function Greeting({initialName = ''}) {
   // BAD: do NOT call Storage.setItem() directly!
   //    must use useEffect, because Storage.setItem() has sideEffects.
   // GOOD: useEffect callback
-  React.useEffect(() => window.localStorage.setItem('name', name))
+
+  React.useEffect(() => {
+    window.localStorage.setItem('name', name)
+  })
+  // our anon function callback should NOT return anything.
+  // Thus *should* be surrounded by braces {}
+  // Otherwise, the single line function expression will be interpreted
+  // as an arrow function "explicit return", and RETURN that function's
+  //    return value (window...setItem() probably returns undefined...
+  // NOT critical, because any return value is likely ignored, but...
+  // This is a distinction.
+  // When braces are included, if we want a return value, then
+  //    we must explicitley add the keyword `return`
+  // Compare the above function to the next 2, which are incorrect
+  //   (though not consequentially so in this case)
+  //    the following two are the same as each other, but different from above.
+  //
+  //  CORRECT:
+  //  React.useEffect(() => {window.localStorage.setItem('name', name)})
+  //
+  //  WRONG:
+  //  React.useEffect(() => window.localStorage.setItem('name', name))
+  //
+  //  WRONG:
+  //  React.useEffect(() => {
+  //      return window.localStorage.setItem('name', name)
+  //  })
 
   // useEffect is like componentDidMount, componentDidUpdate, AND componentWillUnmount
   //  ("Effects", useEffects happen AFTER RENDER, for purposeful side effects)
