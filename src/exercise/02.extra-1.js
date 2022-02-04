@@ -4,9 +4,12 @@
 import * as React from 'react'
 
 function Greeting({initialName = ''}) {
-  /* NOTE THIS VERSION OF CODE IS EXPERIMENTAL FOR LEARNING,
-    Comparing, Contrasting.
-*/
+  /*Previous commit has examples of 4 different ways to
+        write the code to use lazy initialization with useState
+        plus 2 ways that do NOT use lazy initialization, which can be expensive.
+    that commit has Experimental code that is good for
+    LEARNING, Comparing and Contrasting only.
+  */
 
   // ----
   // 02. Extra-Credit-1
@@ -41,77 +44,28 @@ function Greeting({initialName = ''}) {
 
   // 🐨 initialize the state to the value from localStorage
 
-  // SH Note: below 2 LINES are run at every render.
-  // We want to read from Storage at time of mount only.
-  //   like data fetching
-  // Except localStorage.getItem is SYNCHRONOUS, data fetching is Asynchronous!
+  // Do NOT do this. It is expensive NOT lazy initialization.
+  // It unnecessarily reads the Storage at every render.
+  // It should only read it at page reload (Component Mount)
+  initialName_EXPENSIVE = window.localStorage.getItem('name') ?? initialName
+  const [name_EXPENSIVE, setName_EXPENSIVE] = React.useState(initialName)
 
-  //  TBF, the useState call is also, and must be,
-  //     run at every render, too!
-  //  BUT we want the call to read ...localStorage.getItem()...
-  //    to be run ONCE (at/per component mount)
-
-  // Think of localStorage as data fetching. It is.
-  //    Except that Storage.getItem()/setItem is Synch!! http calls are Asynch.
-
-  const initialName_WRONG =
-    // console.log returns undefined, so can use an OR statement here
-    //  to get a printout AND run the function I need, all within the same expression.
-    console.log(
-      '---in WRONG way, notice I am the only one that runs again at EVERY render?',
-    ) ||
-    (window.localStorage.getItem('name_WRONG') ?? initialName)
-  console.log('---Rerendering.. new Wrong_Way value: ', initialName_WRONG)
-  const [name_WRONG, setName_WRONG] = React.useState(initialName_WRONG)
-
-  /*
-  initialName = window.localStorage.getItem('name') ?? initialName
-  const [name, setName] = React.useState(initialName)
-    //     Exactly the same:
-    //     (localStorage is read every render before useState called):
-    //  const [name, setName] = React.useState(
-    //    window.localStorage.getItem('name') ?? initialName,
-    //  )
-
-      // it is EXACTLY THE SAME.
-  //    The CALL to window.localStorage.getItem()...
-  //    is exectued at EVERY RENDER.
-  // NOT what we want. Only want it run at page load aka at 1st render
-  */
-
-  // useState is Asynchronous
-
-  // 1
+  // 1  ok to use. useState decides whether to invoke readInitialName,
+  //        and hence whether or not to call localStorage.getItem()
   function readInitialName() {
-    console.log('before fetch Storage in readInitialName:', initialName)
-    const value = window.localStorage.getItem('name') ?? initialName
-    console.log('after fetch Storage in readInitialName:', value, initialName)
-    return value
+    return window.localStorage.getItem('name') ?? initialName
   }
   const [name, setName] = React.useState(readInitialName)
-
-  // 2
-  // Or write func def as an arrow function
-  const readInitialName2 = () =>
-    window.localStorage.getItem('name2') ?? initialName
-  const [name2, setName2] = React.useState(readInitialName2)
 
   // 3
   // OR cobine both into a 1-liner, using an anon function:
   const [name3, setName3] = React.useState(() => {
-    console.log(
-      'useState3',
-      window.localStorage.getItem('name3') ?? initialName,
-    )
     return window.localStorage.getItem('name3') ?? initialName
   })
 
   // 4
-  // OR cobine both into a 1-liner, using an anon function,
-  //    ...with an arrow function implicit return.
-  //   (CANNOT use braces with implicit return -- braces define a block,
-  //     and the "block" does not have a return, so it implicitely returns 'undefined'
-  //     which is not what was intended.):
+  // OR use anon func with an arrow function implicit return
+  //(CANNOT use `{}` unless also use `return`)
   const [name4, setName4] = React.useState(
     () => window.localStorage.getItem('name4') ?? initialName,
   )
@@ -121,16 +75,12 @@ function Greeting({initialName = ''}) {
   //  must use useEffect
   //      something, something: dependencies, dependency array, side effects
   //      data synch between re-renders. Trigger render if something changes.
+
   // Rem useEffect is like combo of:
   //    componentDidMount, componentWillUpdate, componentWillUnmount
   //    and localStorage is like persistent "state".
   React.useEffect(() => {
     window.localStorage.setItem('name', name)
-    // for comparison
-    window.localStorage.setItem('name_WRONG', name_WRONG)
-    window.localStorage.setItem('name2', name2)
-    window.localStorage.setItem('name3', name3)
-    window.localStorage.setItem('name4', name4)
   })
 
   // useEffect is like componentDidMount, componentDidUpdate, AND componentWillUnmount
@@ -140,8 +90,6 @@ function Greeting({initialName = ''}) {
   function handleChange(event) {
     setName(event.target.value)
     // for comparison
-    setName_WRONG(event.target.value)
-    setName2(event.target.value)
     setName3(event.target.value)
     setName4(event.target.value)
   }
