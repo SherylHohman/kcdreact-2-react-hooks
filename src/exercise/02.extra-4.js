@@ -52,25 +52,54 @@ import * as React from 'react'
 //   Ok. Start with regular objects and arrays.
 //   Nope. I'll start with storing a string in our wrapper object.
 
-function useLocalStorageState(storageName, defaultValue = '') {
+function useLocalStorageState(
+  storageName,
+  defaultValue = 'defaultValue(changeToEmptyString)',
+) {
+  console.log(storageName, defaultValue)
   // UH OH! looks like the localStorage value takes precedent over the passed in
   //  value. I changed the definition of the nested-object passed in from the
   //  component "call". But the old version remained in storage after reload.
   //  Is this expected? Wait. Maybe it treats the passed in stuff as a "default".
   //  So that *is* proper. Obviously I need to step away for a break!
 
+  // Great :-((  Now, almost NONE of the items get written to storage!
+  //    What happened? Did I even change any of that?
+
   // lazy initialization from value in storage, (if exists)
   const [data, setData] = React.useState(
-    () =>
-      JSON.parse(window.localStorage.getItem(storageName))?.data ??
-      defaultValue,
+    // () =>
+    //   JSON.parse(window.localStorage.getItem(storageName))?.data ??
+    //   defaultValue,
     //  Official Solution:
     // () => window.localStorage.getItem(keyName) || defaultValue,
+    () => {
+      console.log(`.....restoring......${storageName}...............`)
+      const retrieved = JSON.parse(window.localStorage.getItem(storageName))
+      let retrievedData = retrieved?.data ?? defaultValue
+      let restoredData
+      let type = retrieved?.dataType ?? undefined
+
+      console.log('retrievedData', retrievedData, 'type', type)
+      switch (type) {
+        default:
+          // string, number, bigInt,
+          restoredData = retrievedData
+          break
+        case 'null':
+        case 'undefined':
+          restoredData = retrievedData.toString()
+          break
+      }
+      return restoredData
+    },
   )
 
   // update Storage when its value changes;
   React.useEffect(() => {
     const dataType = typeof data
+    let storeDataAs = data
+    let storeDataTypeAs = dataType
     // Invalid arguments are Functions, Symbols, etc, which are not even data types
     // JSON.stringify turns them into undefined and/or discards them altogether
     if (
@@ -84,48 +113,57 @@ function useLocalStorageState(storageName, defaultValue = '') {
       // WARNING: this will may the actual data value in the program!
       //   TODO: See if it is OK to do this. If not, find another way.
       //         This is temp anyway. Undecided on how to handle functions, symbols.
-      setData(undefined) // defaultValue? or null? or undefined (cannot be stringified)
+      //setData('UNDEFINED') // defaultValue? or null? or undefined (cannot be stringified)
+      storeDataTypeAs = 'UNDEFINED'
+      storeDataAs = 'UNDEFINED'
+      //   storeDataAs = undefined // json.stringify ignores and wont encode it, won't be stored
       console.log(
         storageName,
         ': ',
         dataType,
         'is an Invalid Datatype. Cannot store it in localStorage. Setting to defaultValue',
       )
+    } else {
+      //
+      // These datatypes are incorrectly stringified to null:
+      //   NaN, Infinity,
+      // BigInt produces error, but can instead tconvert it to a string
+      //   //  MDN on bigInt suggests adding this, then JSON.stringify will work on a bigInt
+      //   //  BigInt.prototype.toJSON = function() { return this.toString()  }
+      //   //  I'll just convert it manually though, instead of adding to the prototyee
+      // Symbol stringify as undefined. But can use someSymbol.toString()
+      //   // However, if recreate a symbol, it will not reference the ORIG symbol
+      //   // so I am not sure how useful it would be to "retrieve" one from storage?
+      // TODO: store and retieve them with in a special manner
+      // TODO: if want to store 'undefined', need to store it in a special manner
+      // eg: store the type, and then store the data as a string:
+      // "undefined", "NaN", (myBigInt.toString), "Infinity", "-Infinity", (mySymbol.toString)
+      //  (while null is incorrectly typed as object, stringify and parse both work as
+      //   expected on regular objects and on null, so it is fine to store its
+      //   dataType as object, with no special handling
+      //   )
+      //  Will I have to recurse (drill down) through objects to specially encode
+      //    those funky data types for each property value on the object?
+      //    Ugh. I would guess: yess.
+      //    Maybe create a prototype override then for my special props?. No.
+      //    But will likely need to drill down. I am surprised this little
+      //      exercise would require that.
+      //    Let's just do single level first.
+      // Hopefully everything else works as expected.
     }
-    //
-    // These datatypes are incorrectly stringified to null:
-    //   NaN, Infinity,
-    // BigInt produces error, but can instead tconvert it to a string
-    //   //  MDN on bigInt suggests adding this, then JSON.stringify will work on a bigInt
-    //   //  BigInt.prototype.toJSON = function() { return this.toString()  }
-    //   //  I'll just convert it manually though, instead of adding to the prototyee
-    // Symbol stringify as undefined. But can use someSymbol.toString()
-    //   // However, if recreate a symbol, it will not reference the ORIG symbol
-    //   // so I am not sure how useful it would be to "retrieve" one from storage?
-    // TODO: store and retieve them with in a special manner
-    // TODO: if want to store 'undefined', need to store it in a special manner
-    // eg: store the type, and then store the data as a string:
-    // "undefined", "NaN", (myBigInt.toString), "Infinity", "-Infinity", (mySymbol.toString)
 
-    //  (while null is incorrectly typed as object, stringify and parse both work as
-    //   expected on regular objects and on null, so it is fine to store its
-    //   dataType as object, with no special handling
-    //   )
-
-    //  Will I have to recurse (drill down) through objects to specially encode
-    //    those funky data types for each property value on the object?
-    //    Ugh. I would guess: yess.
-    //    Maybe create a prototype override then for my special props?. No.
-    //    But will likely need to drill down. I am surprised this little
-    //      exercise would require that.
-    //    Let's just do single level first.
-
-    // Hopefully everything else works as expected.
-
-    window.localStorage.setItem(
-      storageName,
-      JSON.stringify({type: dataType, data: data}),
-    )
+    // window.localStorage.setItem(
+    //   storageName,
+    //   JSON.stringify({type: dataType, data: data}),
+    // )
+    const stringifiedData = JSON.stringify({
+      type: storeDataTypeAs,
+      data: storeDataAs,
+    })
+    console.log('-------storing------')
+    console.log(`- ${storageName}:  ${stringifiedData}`)
+    window.localStorage.setItem(storageName, stringifiedData)
+    //   JSON.stringify({type: storeDataTypeAs, data: storeDataAs}),
   }, [storageName, data])
   /*
         String	"string"
@@ -140,6 +178,7 @@ function useLocalStorageState(storageName, defaultValue = '') {
         // cannot be stringified
         "undefined"
         Function object (implements [[Call]] in ECMA-262 terms)	"function"
+        // can call toString, then stringify that result
         Symbol (new in ECMAScript 2015)	"symbol"
  */
 
@@ -161,39 +200,56 @@ function StashData({data = 'defaultString', storageName = 'defaultStorage'}) {
 
   return (
     <div>
-      {/*   hello data: {data} <br />
       storageName: {storageName} <br />
-      storedData: {storedData} <br />
-     */}
+      {/* hello data: {(data && data.toString()) || 'FALSEY JSX VALUE'} <br />
+      storedData: {(storedData && storedData.toString()) ||
+        'FALSEY JSX VALUE'}{' '}
+      <br />
+      <br /> */}
     </div>
   )
 }
 
 function App() {
-  const dummyFunction = function () {
-    console.log('do nothing')
-  }
-  const dummySymbol = Symbol('aDummySymbol')
+  //   const dummyFunction = function () {
+  //     console.log('do nothing')
+  //   }
+  //   const dummySymbol = Symbol('aDummySymbol')
   return (
     <>
-      <StashData data={5} storageName="stash-number" />
-      <StashData data={'hello'} storageName="stash-string" />
-      <StashData data={true} storageName="stash-Boolean" />
-      <StashData data={{a: 'a', b: false}} storageName="stash-SimpleObject" />
-      <StashData
-        data={{a: 'a', b: false, nested: {emptyString: ''}}}
-        storageName="stash-NestedObject"
-      />
-      <StashData data={[0, 1, 2, 3]} storageName="stash-Array" />
-      <StashData data={undefined} storageName="stash-Undefined" />
-      <StashData data={null} storageName="stash-Null" />
-      special numeric values
-      <StashData data={NaN} storageName="stash-NaN" />
-      <StashData data={Infinity} storageName="stash-p-Infinity" />
-      <StashData data={-Infinity} storageName="stash-n-Infinity" />
-      cannot do
-      <StashData data={dummyFunction} storageName="stash-Function" />
-      <StashData data={dummySymbol} storageName="stash-Symbol" />
+      <div>
+        <h5>JSON.stringify straight-forward</h5>
+        <StashData data={5} storageName="stash-number" />
+        <StashData data={'hello'} storageName="stash-string" />
+        <StashData data={true} storageName="stash-Boolean" />
+        <StashData data={null} storageName="stash-Null" />
+      </div>
+      <div>
+        <h5>
+          objects, arrays easy, but may need to handle their special values
+        </h5>
+        <StashData data={{a: 'a', b: false}} storageName="stash-SimpleObject" />
+        <StashData
+          data={{a: 'a', b: false, nested: {emptyString: ''}}}
+          storageName="stash-NestedObject"
+        />
+        <StashData data={[0, 1, 2, 3]} storageName="stash-Array" />
+      </div>
+      <div>
+        <h5>undefined</h5>
+        <StashData data={undefined} storageName="stash-Undefined" />
+      </div>
+      <div>
+        <h5>special numeric values</h5>
+        <StashData data={NaN} storageName="stash-NaN" />
+        <StashData data={Infinity} storageName="stash-p-Infinity" />
+        <StashData data={-Infinity} storageName="stash-n-Infinity" />
+      </div>
+      <div>
+        <h5>cannot do</h5>
+        {/* <StashData data={dummyFunction} storageName="stash-Function" /> */}
+        {/* <StashData data={dummySymbol} storageName="stash-Symbol" /> */}
+      </div>
     </>
   )
 }
