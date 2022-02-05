@@ -53,46 +53,53 @@ import * as React from 'react'
 //   Nope. I'll start with storing a string in our wrapper object.
 
 function useLocalStorageState(storageName, defaultValue = '') {
-  // keyName will always be coerced into a string. Even if it is undefined or null.
-  //    and '' is also an allowed keyName on the local Storage object.
-  //
   // lazy initialization from value in storage, (if exists)
   const [data, setData] = React.useState(
-    // () => JSON.parse(window.localStorage.getItem(storageName)) ?? defaultValue,
+    () => JSON.parse(window.localStorage.getItem(storageName)) ?? defaultValue,
     //  Official Solution:
     // () => window.localStorage.getItem(keyName) || defaultValue,
 
-    () => {
-      const item = window.localStorage.getItem(storageName) ?? defaultValue
-      const parsed = JSON.parse(item) ?? defaultValue
-      console.log('\n....\n', item, '\n', parsed, '\n....\n')
-      return parsed
-    },
+    // () => {
+    //   const item = window.localStorage.getItem(storageName) ?? defaultValue
+    //   const parsed = JSON.parse(item)
+    //   console.log('\n....\n', item, '\n', parsed, '\n....\n')
+    //   return parsed
+    // },
   )
 
   // update Storage when its value changes;
   React.useEffect(() => {
     const valueType = typeof data
-    let storageObject
-    if (valueType in ['string', 'number', 'boolean', 'bigint']) {
-      //   storageObject.datatype = valueType
-      //   storageObject.data = data
-      storageObject = {
-        datatype: valueType,
-        data: data,
-      }
-    }
-    const storedData = JSON.stringify(storageObject)
-    // const storedData = JSON.stringify(data)
-    console.log('\n----')
-    console.log('dataType   :', valueType)
-    console.log('dataIN     :', data)
-    console.log('stringified:', storedData)
-    window.localStorage.setItem(storageName, storedData)
-    const rawName = String(storageName + '-raw')
-    window.localStorage.setItem(rawName, data)
-    console.log(rawName, data)
-    console.log(storageObject)
+    // let storageObject
+    // let setTypes = new Set(['string', 'number', 'boolean', 'bigint'])
+    // if (setTypes.has(valueType)) {
+    //   //   storageObject.datatype = valueType
+    //   //   storageObject.data = data
+    //   storageObject = {
+    //     datatype: valueType,
+    //     data: data,
+    //   }
+    // } else {
+    //   console.log('UNACCOUNTED DATA TYPE', valueType)
+    // }
+
+    // const storedData = JSON.stringify(storageObject)
+    // // const storedData = JSON.stringify(data)
+    // console.log('\n----')
+    // console.log('dataType   :', valueType)
+    // console.log('dataIN     :', data)
+    // console.log('stringified:', storedData)
+    // // window.localStorage.setItem(storageName, storedData)
+
+    // const rawName = String(storageName + '-raw')
+    // console.log(rawName, data)
+    // console.log(storageObject)
+    // // window.localStorage.setItem(rawName, data)
+
+    window.localStorage.setItem(
+      'stringified-object',
+      JSON.stringify({type: valueType, data: data}),
+    )
   }, [storageName, data])
   /*
         String	"string"
@@ -116,16 +123,20 @@ function StashData({data = 'defaultString', storageName = 'defaultStorage'}) {
   //   function handleChange(event) {
   //     setStoredData(event.target.value)
   //   }
+
   // silence the compiler
   if (false) {
     setStoredData()
+    console.log(storedData)
   } // DELETE
 
   return (
     <div>
-      data: {data} <br />
+      hello
+      {/* data: {data} <br />
       storageName: {storageName} <br />
       storedData: {storedData} <br />
+      */}
     </div>
   )
 }
