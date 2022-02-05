@@ -10,6 +10,7 @@ import * as React from 'react'
 // support any data type (remember, you have to serialize objects to strings…
 //     use JSON.stringify and JSON.parse). Go wild with this!
 
+//---
 // SH clarification thoughts on what the exercise wants and what I need to do to
 //   achieve it:
 //   Using JSON.parse and JSON.stringify so localStorage can save any data
@@ -51,48 +52,92 @@ import * as React from 'react'
 //   Ok. Start with regular objects and arrays.
 //   Nope. I'll start with storing a string in our wrapper object.
 
-function useLocalStorageState(keyName, defaultValue = '') {
+function useLocalStorageState(storageName, defaultValue = '') {
   // keyName will always be coerced into a string. Even if it is undefined or null.
   //    and '' is also an allowed keyName on the local Storage object.
   //
   // lazy initialization from value in storage, (if exists)
-  const [keyValue, setKeyValue] = React.useState(
-    () => window.localStorage.getItem(keyName) ?? defaultValue,
+  const [data, setData] = React.useState(
+    // () => JSON.parse(window.localStorage.getItem(storageName)) ?? defaultValue,
     //  Official Solution:
     // () => window.localStorage.getItem(keyName) || defaultValue,
+
+    () => {
+      const item = window.localStorage.getItem(storageName) ?? defaultValue
+      const parsed = JSON.parse(item) ?? defaultValue
+      console.log('\n....\n', item, '\n', parsed, '\n....\n')
+      return parsed
+    },
   )
 
-  // update Storage when its value changes
+  // update Storage when its value changes;
   React.useEffect(() => {
-    window.localStorage.setItem(keyName, keyValue)
-  }, [keyName, keyValue])
+    const valueType = typeof data
+    let storageObject
+    if (valueType in ['string', 'number', 'boolean', 'bigint']) {
+      //   storageObject.datatype = valueType
+      //   storageObject.data = data
+      storageObject = {
+        datatype: valueType,
+        data: data,
+      }
+    }
+    const storedData = JSON.stringify(storageObject)
+    // const storedData = JSON.stringify(data)
+    console.log('\n----')
+    console.log('dataType   :', valueType)
+    console.log('dataIN     :', data)
+    console.log('stringified:', storedData)
+    window.localStorage.setItem(storageName, storedData)
+    const rawName = String(storageName + '-raw')
+    window.localStorage.setItem(rawName, data)
+    console.log(rawName, data)
+    console.log(storageObject)
+  }, [storageName, data])
+  /*
+        String	"string"
+        Number	"number"
+        Boolean	"boolean"
+        BigInt (new in ECMAScript 2020)	"bigint"
 
-  return [keyValue, setKeyValue]
+        Null	"object" (see below)
+        Any other object	"object"
+        "undefined"
+        Function object (implements [[Call]] in ECMA-262 terms)	"function"
+        Symbol (new in ECMAScript 2015)	"symbol"
+ */
+
+  return [data, setData]
 }
 
-function Greeting({initialName = ''}) {
-  //  This custom hook replaces the useState and useEffect to keep state
-  //    in synch with localStorage to provide persistent data
+function StashData({data = 'defaultString', storageName = 'defaultStorage'}) {
+  const [storedData, setStoredData] = useLocalStorageState(storageName, data)
 
-  const [name, setName] = useLocalStorageState('name', initialName)
-
-  function handleChange(event) {
-    setName(event.target.value)
-  }
+  //   function handleChange(event) {
+  //     setStoredData(event.target.value)
+  //   }
+  // silence the compiler
+  if (false) {
+    setStoredData()
+  } // DELETE
 
   return (
     <div>
-      <form>
-        <label htmlFor="name">Name: </label>
-        <input value={name} onChange={handleChange} id="name" />
-      </form>
-      {name ? <strong>Hello {name}</strong> : 'Please type your name'}
+      data: {data} <br />
+      storageName: {storageName} <br />
+      storedData: {storedData} <br />
     </div>
   )
 }
 
 function App() {
-  return <Greeting />
+  return (
+    <>
+      <StashData data={5} storageName="stash-number" />
+      <StashData data={'hello'} storageName="stash-string" />
+      <StashData data={true} storageName="stashBoolean" />
+    </>
+  )
 }
 //
 
@@ -136,6 +181,16 @@ function stringifyExamples(){
     console.log(JSON.stringify(new Date(2006, 0, 2, 15, 4, 5)));
     // expected output: ""2006-01-02T15:04:05.000Z""
 
+    let a = 5;
+    let b = "smile"
+    let c = true;
+    let stringifiedData_a = JSON.stringify({type: typeof(a), data: a})
+    let stringifiedData_b = JSON.stringify({type: typeof(b), data: b})
+    let stringifiedData_c = JSON.stringify({type: typeof(c), data: c})
+    console.log(stringifiedData_a)
+    console.log(stringifiedData_b)
+    console.log(stringifiedData_c)
+
     /*
     -------------
     >'[55,"false",false]'
@@ -150,7 +205,7 @@ function stringifyExamples(){
     */
 
 }
-stringifyExamples()
+// stringifyExamples()
 /* eslint-enable */
 
 export default App
