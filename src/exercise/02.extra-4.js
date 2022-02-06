@@ -58,6 +58,69 @@ function useLocalStorageState(
 ) {
   console.log(storageName, defaultValue)
 
+  //  Update.
+  //  1. when Stringify removes all undefined values, and "disapears" those
+  //    variables, object properties, array items, etc, it does so slightly
+  //    different, in an intelligent way for arrays. It replaces `undefined`
+  //    with `null`, so that indexing is not disturbed (which would destroy the
+  //    data object!) However, I think it is still worth making a substitution,
+  //    because if the array items are passed to a function, that sets a default
+  //    value for anything that is `undefined`, then passing in a `null`, would
+  //    NOT trigger the default value substitution, and thus could cause bugs.
+  //    Hence, IMHO, it is important to distinguish between `null` and `undefined`.
+  //    So my string substitution mentioned somewhere below, is still on the table.
+
+  //  2. I found better documentation on `replace` optional parameter to
+  //    JSON.stringify. Namely, I can define a function to do the substitutions
+  //    I want. And `stringify` operates recursively, so that takes care of
+  //    *that* headache I did not want to deal with!
+  //    And since I will NOT be attempting to write wrapper objects, the whole
+  //    idea seems much more manageable.
+
+  //  3. Sets is another item that stringify does incorrectly.
+  //    (do not rem if it gives an empty object, an empty array,
+  //     or just ignores it compoletely)
+  //    What I *d8* remember is that I can just turn it into an Array & stringify that.
+  //    (Problem remains that we may give the user back a bad data type -- they
+  //    expect Set uniqueness, but get back an array?. Hopefully the user/program
+  //    knows to turn it back into a set.) Alternatively I could turn the thing
+  //    into a string?? pre-pended with "SET" or something. then take that as a
+  //    re-encoding clue??
+  //    Better yet (if it is not a nested property), the expected data type
+  //    could be passed into the setState/useState Store.getItem and useEffect
+  //    Store.setItem function, and I can use that to create a Set, using the
+  //    restored "Array".
+
+  //    4. Recap on the datatypes that need special attention:
+  //        - functions and symbols will always be dropped. cannot be saved/restored
+  //            That is fine. (?). They are not traditional "data types anyhow.
+  //            And JSON is inapropriate anyway. No expectation that it could be.
+
+  //        The OTHERS, However, we do have an expectation that it is not limited:
+  //        - bigInt needs to be converted to string, it does NOT have a toJSON method
+  //        - Sets (object instanceof Set)
+  //        - Number: NaN, Infinify, Number.NEGATIVE_INFINITY
+  //        - undefined if in an array (Object.isArray())
+  //        - (undefined in other instances can probably be ignored and left out
+  //            of JSON conversions as is standard.
+  //            programatically it will be the same.
+  //            Just make sure that any missing properties default to `undefined`.)
+  //            WAIT. That would make Storage.setItem store "nothing", aka akin to
+  //            an empty string, if it is a simple variable (not part of an
+  //            object or array...) Hmmm...maybe I should revisit th eencoded
+  //            String theory, or passing in the expected dataType (if top level).
+  //        - Another thing is that I am IGNORING quotation mark issues in strings!!
+  //            Not sure if/how JSON handles that. Hopefully it escapes stuff
+  //            correctly, And Parse handles it too. Unfortunately, there ARE
+  //            cases where thr wrong type of quotation mark can cause issues,
+  //            or where escape sequences will not quite work.
+  //            JSON really is not a perfect data transport method!!
+  //            I'll ignore, and gloss over this!
+  //    5. JSON5: Finally, if all else fails, there is a JSON5 package on npm and
+  //        also available as an script url that handles most of the datatype
+  //        limitations listed here!! And some stuff I do not care about.
+  //
+
   // OK, so in this case, since we are storing Data, not exclusively strings,
   //   I think I'll let `undefined` values remain as `undefined` values.
   //   Also, since, programatically, `undefined` similar to a variable, or
