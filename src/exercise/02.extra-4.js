@@ -54,17 +54,37 @@ import * as React from 'react'
 
 function useLocalStorageState(
   storageName,
-  defaultValue = 'defaultValue(changeToEmptyString)',
+  defaultValue = 'UNDEFINED-defaultValue-OK?-or-(changeBackToEmptyString)',
 ) {
   console.log(storageName, defaultValue)
-  // UH OH! looks like the localStorage value takes precedent over the passed in
-  //  value. I changed the definition of the nested-object passed in from the
-  //  component "call". But the old version remained in storage after reload.
-  //  Is this expected? Wait. Maybe it treats the passed in stuff as a "default".
-  //  So that *is* proper. Obviously I need to step away for a break!
 
-  // Great :-((  Now, almost NONE of the items get written to storage!
-  //    What happened? Did I even change any of that?
+  // OK, so in this case, since we are storing Data, not exclusively strings,
+  //   I think I'll let `undefined` values remain as `undefined` values.
+  //   Also, since, programatically, `undefined` similar to a variable, or
+  //      property not even exisiting, perhaps it would be prudent to just
+  //      let JSON.stringify handle it in its usual way: ignore and simply
+  //      refuse to encode any variable/property on an object that is
+  //      `undefined`.
+  //   However, I do see an issue arrising with Arrays. If a value of
+  //      `undefined` gets skipped over, the length of the array, and the
+  //      indicies of the other elements in the array would change, which could
+  //      be disasterous.
+  //    Sooo, I'll need to think of a way to handle that.
+  //      (maybe for Arrays, replace undefined with some ridiculously long string
+  //       that would be most unlikely to occur IRL, then when reading data
+  //       back in, swap it back? Hacky, and could produce a bug, but definitley
+  //        fewer bugs than doing nothing.
+  //      More robust would be to use my initial idea of wrapping everything in
+  //          in an object stating its dataType, and then the value.
+  //          but to do that properly, EVERY single variable/property/array-item
+  //          would need to be individually wrapped as an object. Including
+  //          every level of nesting.
+  //          I am not willing to do that for this exercise.
+  //          I am not sure I am even willing to do a string replacement,
+  //          recursively, whether for EVERY undefined in every object or array
+  //          or variable, or even just the ones in Arrays, where it could be
+  //          the most consequential.
+  //       )
 
   // lazy initialization from value in storage, (if exists)
   const [data, setData] = React.useState(
@@ -74,7 +94,7 @@ function useLocalStorageState(
     //  Official Solution:
     // () => window.localStorage.getItem(keyName) || defaultValue,
     () => {
-      console.log(`.....restoring......${storageName}...............`)
+      //   console.log(`.....restoring......${storageName}...............`)
       const retrieved = JSON.parse(window.localStorage.getItem(storageName))
       let retrievedData = retrieved?.data ?? defaultValue
       let restoredData
@@ -83,11 +103,22 @@ function useLocalStorageState(
       console.log('retrievedData', retrievedData, 'type', type)
       switch (type) {
         default:
-          // string, number, bigInt,
+          // string,
+          // case 'null':
+          // Object but NOT Set,
           restoredData = retrievedData
           break
-        case 'null':
-        case 'undefined':
+
+        case 'number':
+          // number: NaN, Infinity, -Infinity
+          restoredData = retrievedData
+          // number but NOT NaN, Infinity, Number.NEGATIVE_INFINITY,
+          restoredData = retrievedData.toString()
+          break
+
+        case 'SOMETHING-SOMETHING':
+          // case 'undefined':
+          // bigInt
           restoredData = retrievedData.toString()
           break
       }
