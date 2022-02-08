@@ -4,38 +4,24 @@
 
 import * as React from 'react'
 
-// 4. 💯 flexible localStorage hook
+// 02.extra-4. 💯 flexible localStorage hook
 
 // Take your custom useLocalStorageState hook and make it generic enough to
 // support any data type (remember, you have to serialize objects to strings…
 //     use JSON.stringify and JSON.parse). Go wild with this!
 
-//---
+// ---
 // SH clarification thoughts on what the exercise wants and what I need to do to
 //   achieve it:
 //   Using JSON.parse and JSON.stringify so localStorage can save any data
 //   type (ie objects and arrays) as opposed to the default, which can only
 //   store strings and values (numbers, undefined, null) coerced into strings.
 
-//   Specifically, we want to be able to store arrays and objects in the
-//   localStorage, and read them back into the program as their orig data type.
-//   I wonder if that would include functions, symbols, etc. I would think not,
-//   but.. what if I want to store a function, a symbol, null?
-
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
 //   JSON.stringify turns functions, symbols, undefined, etc into undefined and
 //      discards them.
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
-
-//   Also, it seems to me that I want to distinguish between the value
-//   undefined/null/NaN/... and the strings 'undefined', 'null', 'NaN', 'Infinity'...
-//   So perhaps some special convention can be used to store this type?
-//   My thought was to store them as an object with a special property name.
-//   But it is not knowable if said object could not exist in the wild with the
-//   same contrived structure that I come up with.
-//   Perhaps, I cannot store those values, or the user would need to decide if
-//   a string or other data-type is expected in those cases.
 
 //   Hmm.. unless EVERYTHING was wrapped in an object that specified the
 //   datatype and the data.
@@ -46,24 +32,26 @@ import * as React from 'react'
 //     string, but as part of an object. But we are not here to read the local
 //     storage directly with our eyes, but in our program. Storage is to Persist Data.
 //     not be read directly (easy to read) in the browser dev tools!
-//   Ok, that will be my approach. I think.
-//   But I'll start simple. And build up. Maybe.
 
-//   Ok. Start with regular objects and arrays.
-//   Nope. I'll start with storing a string in our wrapper object.
-
-//-------------------------
-//  Update.
+//---
+//  SH Update.
 //  1. when Stringify removes all undefined values, and "disapears" those
-//    variables, object properties, array items, etc, it does so slightly
-//    different, in an intelligent way for arrays. It replaces `undefined`
+//    variables, object properties, array items, etc, it does so slightly.
+//    However for Arrays, it intelligently replaces `undefined`
 //    with `null`, so that indexing is not disturbed (which would destroy the
-//    data object!) However, I think it is still worth making a substitution,
-//    because if the array items are passed to a function, that sets a default
+//    data array as a data construct!)
+//      However, this *could* create a difficlut to find bug, if the program
+//      depends on there being a distinction between null and undefined values
+//      in the array data.
+//      One example is:
+//      if array items are passed to a function, that sets a default
 //    value for anything that is `undefined`, then passing in a `null`, would
 //    NOT trigger the default value substitution, and thus could cause bugs.
 //    Hence, IMHO, it is important to distinguish between `null` and `undefined`.
 //    So my string substitution mentioned somewhere below, is still on the table.
+//      Unfortunately, JSON will not let the replacer function alter null.
+//      maybe could do so my modifying the Prototype.toString property,
+//      but that is bad practice.
 
 //  2. I found better documentation on `replace` optional parameter to
 //    JSON.stringify. Namely, I can define a function to do the substitutions
@@ -99,11 +87,6 @@ import * as React from 'react'
 //        - (undefined in other instances can probably be ignored and left out
 //            of JSON conversions as is standard.
 //            programatically it will be the same.
-//            Just make sure that any missing properties default to `undefined`.)
-//            WAIT. That would make Storage.setItem store "nothing", aka akin to
-//            an empty string, if it is a simple variable (not part of an
-//            object or array...) Hmmm...maybe I should revisit th eencoded
-//            String theory, or passing in the expected dataType (if top level).
 //        - Another thing is that I am IGNORING quotation mark issues in strings!!
 //            Not sure if/how JSON handles that. Hopefully it escapes stuff
 //            correctly, And Parse handles it too. Unfortunately, there ARE
@@ -123,15 +106,7 @@ import * as React from 'react'
 //      let JSON.stringify handle it in its usual way: ignore and simply
 //      refuse to encode any variable/property on an object that is
 //      `undefined`.
-//   However, I do see an issue arrising with Arrays. If a value of
-//      `undefined` gets skipped over, the length of the array, and the
-//      indicies of the other elements in the array would change, which could
-//      be disasterous.
-//    Sooo, I'll need to think of a way to handle that.
-//      (maybe for Arrays, replace undefined with some ridiculously long string
-//       that would be most unlikely to occur IRL, then when reading data
-//       back in, swap it back? Hacky, and could produce a bug, but definitley
-//        fewer bugs than doing nothing.
+
 //      More robust would be to use my initial idea of wrapping everything in
 //          in an object stating its dataType, and then the value.
 //          but to do that properly, EVERY single variable/property/array-item
@@ -156,218 +131,244 @@ function useLocalStorageState(
     // () =>
     //   JSON.parse(window.localStorage.getItem(storageName))?.data ??
     //   defaultValue,
-    //  Official Solution:
     // () => window.localStorage.getItem(keyName) || defaultValue,
     () => {
-      //   console.log(`.....restoring......${storageName}...............`)
-      const retrieved = JSON.parse(window.localStorage.getItem(storageName))
-      let retrievedData = retrieved?.data ?? defaultValue
-      let restoredData
-      let type = retrieved?.dataType ?? undefined
+      const parseReviver = function (retrievedData) {
+        const type = typeof retrievedData
+        console.log('retrievedData', retrievedData, 'type', type)
 
-      console.log('retrievedData', retrievedData, 'type', type)
-      switch (type) {
-        default:
-          // string,
-          // case 'null':
-          // Object but NOT Set,
-          restoredData = retrievedData
-          break
+        let restoreDataAs // = retrievedData
+        if (type !== 'string') {
+          return retrievedData
+        }
 
-        case 'number':
-          // number: NaN, Infinity, -Infinity
-          restoredData = retrievedData
-          // number but NOT NaN, Infinity, Number.NEGATIVE_INFINITY,
-          restoredData = retrievedData.toString()
-          break
+        if (retrievedData.indexOf(ENCODING_KEY) !== 0) {
+          return retrievedData
+        }
 
-        case 'SOMETHING-SOMETHING':
-          // case 'undefined':
-          // bigInt
-          restoredData = retrievedData.toString()
-          break
-      }
-      return restoredData
+        const encodedValue = retrievedData.slice(ENCODING_KEY.length)
+        console.log(encodedValue, ':\n    ')
+
+        switch (encodedValue) {
+          //   switch (retrievedData.slice(ENCODING_KEY.length)) {
+          default:
+            // null, number, object, array, etc
+            // WARN: sets will be restored as arrays
+            // WARN: stringed arrays will be restored as normal indexed arrays
+            // Functions, Symbols, Maps, etc were never stored, so cannot be restored
+            return retrievedData
+          //   break`
+          case UNDEFINED:
+            restoreDataAs = undefined
+            console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+          case NAN:
+            restoreDataAs = Number.NaN
+            console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+          case INFINITY:
+            restoreDataAs = Number.POSITIVE_INFINITY
+            console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+          case NEGATIVE_INFINITY:
+            restoreDataAs = Number.NEGATIVE_INFINITY
+            console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+          case BIGINT:
+            restoreDataAs = new BIGINT(retrievedData)
+            console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+        } //switch
+      } // reviver function
+
+      const restoredData =
+        JSON.parse(window.localStorage.getItem(storageName), parseReviver) ||
+        defaultValue
+      console.log(
+        '\n.............\nrestored Data AS:',
+        restoredData,
+        'storageName: ',
+        storageName,
+        '\n.............\n',
+      )
+      return restoredData // set as initial value in useState function call
     },
   )
 
-  const JSONreplacer = function () {}
-  const parseReviver = function () {}
-  // TEMP silence compiler TODO: remove
-  JSONreplacer()
-  parseReviver()
-
   // update Storage when its value changes;
   React.useEffect(() => {
-    // Strings used to encode/parse data that JSON.stringify does not natively
-    //  preserve original data (and we are interested in preserving)
-    const UNDEFINED = '**JSON_STRINGIFIED**_UNDEFINED'
-    const NAN = '**JSON_STRINGIFIED**_NAN'
-    const INFINITY = '**JSON_STRINGIFIED**_INFINITY'
-    const NEGATIVE_INFINITY = '**JSON_STRINGIFIED**_NEGATIVE_INFINITY'
-    const BIGINT = '**JSON_STRINGIFIED**_BIGINT' //reviver BitInt(remainingstring)
-    // null and arrays (without stringed keys) and other objects
-    //      (except functions and symbols) are
-    //      correclty stringified, natively
-    // CANNOT DO:
-    // const SYMBOL = 'SYMBOL'
-    //   cannot use replacer function will NOT work on Symbols.
-    //   it will always return an empty object ! {}
-    //   see MDN example at https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
-    //  const STRINGED_ARRAY ='STRINGED_ARRAY'
-    // ARRAY with Stringed Keys. It will store a regular array instead
-    //  TODO: is there a work around?
-    // cannot store a FUNCTION
+    console.log('==========useEffect==========')
+    const JSONreplacer = function (key_unused, data) {
+      const dataType = typeof data
+      let storeDataAs = data
 
-    const dataType = typeof data
-    let storeDataAs
+      let storedAsMessage
+      let errorMessageCannot = `${storageName}: ${dataType} cannot be stashed to localstorage as intended. It will be restored as ${storedAsMessage}`
+      // Invalid arguments are Functions, Symbols, etc, which are not even data types
+      // JSON.stringify turns them into undefined and/or discards them altogether
+      let errorMessageEncoded = `${storageName}: ${dataType} will be specially encoded with the string
+        ..............${storeDataAs}, but *should* be restored with its original value`
 
-    let storedAsMessage
-    let errorMessageCannot = `${storageName}: ${dataType} cannot be stashed to localstorage as intended. It will be restored as ${storedAsMessage}`
-    // Invalid arguments are Functions, Symbols, etc, which are not even data types
-    // JSON.stringify turns them into undefined and/or discards them altogether
-    let errorMessageEncoded = `${storageName}: ${dataType} will be specially encoded with the string
-    ..............${storeDataAs}, but *should* be restored with its original value`
+      storeDataAs = data
+      switch (dataType) {
+        default:
+          // Boolean, String, (and anything I forgot)
+          storeDataAs = data
+          break // in case move it higher in the switch chain
 
-    storeDataAs = data
-    switch (dataType) {
-      case 'undefined':
-        // probably best to just use JSON.stringify default behavior, which will simply ignore this value, as though the item never existed
-        //  which programatically the same result, AKAIK.
-        // TODO: remove this
-        // TEMP, to track results
-        storeDataAs = UNDEFINED
-        console.log(errorMessageEncoded)
-        break
+        case 'undefined':
+          // probably best to just use JSON.stringify default behavior, which will simply ignore this value, as though the item never existed
+          //  which programatically the same result, AKAIK.
+          // TODO: remove this
+          // TEMP, to track results
+          storeDataAs = UNDEFINED
+          console.log(errorMessageEncoded)
+          break
 
-      // cannot store
-      case 'function':
-        storedAsMessage = 'undefined'
-        console.log(errorMessageCannot)
-        storeDataAs = data
-        // stringify turns it into undefined, which does not get output at all.
-        // Completely ignored.
-        // cannot be stringified
+        // encoded, depending
+        case 'number':
+          // regular numbers are fine, no encoding necessary
+          storeDataAs = data
+          // These numbers are incorrectly JSON.stringified as null.
+          if (Number.isNaN(data)) {
+            storeDataAs = NAN
+            console.log(errorMessageEncoded)
+          } else if (data === Number.POSITIVE_INFINITY) {
+            storeDataAs = INFINITY
+            console.log(errorMessageEncoded)
+          } else if (data === Number.NEGATIVE_INFINITY) {
+            storeDataAs = NEGATIVE_INFINITY
+            console.log(errorMessageEncoded)
+          }
+          break
 
-        // Concievably could turn into Encoded String, then to restore, use
-        //  var fn = eval("(function() {...})");
-        //  BUT, using eval() can be 'evil'
-        //  I suspect storate object is NOT SECURE.
-        //  So do NOT do this!
+        case 'bigint':
+          storeDataAs = BIGINT + data.toString
+          console.log(errorMessageEncoded)
+          // stringify natively produces a runtime error
+          // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
+          // BigInt produces error, but can instead convert it to a string
+          //   //  MDN on bigInt suggests adding this, then JSON.stringify will work on a bigInt
+          //   //  BigInt.prototype.toJSON = function() { return this.toString()  }
+          //   //  I'll just convert it manually though, instead of adding to the prototype
+          //  BigInt (new in ECMAScript 2020)	"bigint"
+          // MDN suggests adding to the Prototype:
+          //    BigInt.prototype.toJSON = function() { return this.toString()  }
+          // But this is generally considered a bad idea (see no harm in this case)
+          // But I have to handle *other* cases anywat, so just do it here instead. Plus JIC it *is* a bad idea.
+          break
 
-        /* Another interpretation of the assignment is to store the name of the function
-        //  as an encoded string. Then after decoding, look to the window object to match
-        //  an actual function with the funtion name:
-            // function we want to run
+        case 'object':
+          storeDataAs = data
+          // Note:
+          //  - Associative Arrays (Arrays with stringed indexes will be stringified
+          //  as regular numberical indexed arrays. If stringed keys are needed,
+          //      the data should be an (regular) object instead
+          //  - Sets will be stored/restored as Arrays, Can check if a Set via:
+          //      foo instanceof Set; // true
+          //      Theoretically could encode a set inside an object with a special key...
+          //  - Maps, I dunno, but to check for this datatype can use
+          //      foo instanceof Map; // false
+          //      see: https://stackoverflow.com/a/29926193/5411817
+          //  + null is correctly stringified
+          //  + array is correctly stringified
+          //  + objects (regular) are correctly stringified, but cannot have single quotes.
+          break
+
+        // cannot store
+        case 'function':
+          storedAsMessage = 'undefined'
+          console.log(errorMessageCannot)
+          storeDataAs = data
+          // stringify turns it into undefined, which does not get output at all.
+          // Completely ignored.
+          // cannot be stringified
+
+          // Concievably could turn into Encoded String, then to restore, use
+          //  var fn = eval("(function() {...})");
+          //  BUT, using eval() can be 'evil'
+          //  I suspect storate object is NOT SECURE.
+          //  So do NOT do this!
+
+          /* Another interpretation of the assignment is to store the name of the function
+            //  as an encoded string. Then after decoding, look to the window object to match
+            //  an actual function with the funtion name:
+                // function we want to run
+                        var fnstring = "runMe";
+
+                        // find object
+                        var fn = window[fnstring];
+
+                        // is object a function?
+                        if (typeof fn === "function") fn();
+                    //
+                    // OR
+                    //
+                    // function name and parameters to pass
                     var fnstring = "runMe";
+                    var fnparams = [1, 2, 3];
 
                     // find object
                     var fn = window[fnstring];
 
                     // is object a function?
-                    if (typeof fn === "function") fn();
-                //
-                // OR
-                //
-                // function name and parameters to pass
-                var fnstring = "runMe";
-                var fnparams = [1, 2, 3];
+                    if (typeof fn === "function") fn.apply(null, fnparams);
 
-                // find object
-                var fn = window[fnstring];
+                    BUT I still do not think that is secure. And it certainly is NOT needed
+                    for this exercise!
+                */
+          break
 
-                // is object a function?
-                if (typeof fn === "function") fn.apply(null, fnparams);
+        case 'symbol':
+          storedAsMessage = '{}'
+          console.log(errorMessageCannot)
+          // stringify turns it into undefined, which does not get output at all.
+          // Completely ignored.
+          // Or does it turn it into {}.
+          // TODO: DOUBLE CHECK
+          //
+          // Symbol stringify as undefined. But can use someSymbol.toString()
+          //   // However, if recreate a symbol, it will not reference the ORIG symbol
+          //   // so I am not sure how useful it would be to "retrieve" one from storage?
+          storeDataAs = data
+          break
+      } // switch
 
-                BUT I still do not think that is secure. And it certainly is NOT needed
-                for this exercise!
-            */
-        break
-
-      case 'symbol':
-        storedAsMessage = '{}'
-        console.log(errorMessageCannot)
-        // stringify turns it into undefined, which does not get output at all.
-        // Completely ignored.
-        // Or does it turn it into {}.
-        // TODO: DOUBLE CHECK
-        //
-        // Symbol stringify as undefined. But can use someSymbol.toString()
-        //   // However, if recreate a symbol, it will not reference the ORIG symbol
-        //   // so I am not sure how useful it would be to "retrieve" one from storage?
-        storeDataAs = data
-        break
-
-      // encoded, depending
-      case 'bigint':
-        storeDataAs = BIGINT + data.toString
-        console.log(errorMessageEncoded)
-        // stringify natively produces a runtime error
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
-        // BigInt produces error, but can instead convert it to a string
-        //   //  MDN on bigInt suggests adding this, then JSON.stringify will work on a bigInt
-        //   //  BigInt.prototype.toJSON = function() { return this.toString()  }
-        //   //  I'll just convert it manually though, instead of adding to the prototype
-        //  BigInt (new in ECMAScript 2020)	"bigint"
-        // MDN suggests adding to the Prototype:
-        //    BigInt.prototype.toJSON = function() { return this.toString()  }
-        // But this is generally considered a bad idea (see no harm in this case)
-        // But I have to handle *other* cases anywat, so just do it here instead. Plus JIC it *is* a bad idea.
-        break
-
-      case 'number':
-        // regular numbers are fine, no encoding necessary
-        storeDataAs = data
-        // These numbers are incorrectly JSON.stringified as null.
-        if (Number.isNaN(data)) {
-          storeDataAs = NAN
-          console.log(errorMessageEncoded)
-        } else if (data === Number.POSITIVE_INFINITY) {
-          storeDataAs = INFINITY
-          console.log(errorMessageEncoded)
-        } else if (data === Number.NEGATIVE_INFINITY) {
-          storeDataAs = NEGATIVE_INFINITY
-          console.log(errorMessageEncoded)
-        }
-        break
-
-      case 'object':
-        storeDataAs = data
-        // Note:
-        //  - Associative Arrays (Arrays with stringed indexes will be stringified
-        //  as regular numberical indexed arrays. If stringed keys are needed,
-        //      the data should be an (regular) object instead
-        //  - Sets will be stored/restored as Arrays, Can check if a Set via:
-        //      foo instanceof Set; // true
-        //      Theoretically could encode a set inside an object with a special key...
-        //  - Maps, I dunno, but to check for this datatype can use
-        //      foo instanceof Map; // false
-        //      see: https://stackoverflow.com/a/29926193/5411817
-        //  + null is correctly stringified
-        //  + array is correctly stringified
-        //  + objects (regular) are correctly stringified, but cannot have single quotes.
-        break
-
-      default:
-        // Boolean, String, (and anything I forgot)
-        storeDataAs = data
-        break // in case move it higher in the switch chain
+      //   console.dir({storageName, data, storeDataAs})
+      console.log(
+        'storageName:',
+        storageName,
+        'data:',
+        data,
+        'storeDataAs:',
+        storeDataAs,
+      )
+      return storeDataAs
     }
 
-    const stringifiedData = JSON.stringify(storeDataAs)
-    console.dir({storageName, data, storeDataAs})
+    const stringifiedData = JSON.stringify(data, JSONreplacer)
 
-    console.log('-------storing------')
-    console.log(`- ${storageName}:  ${stringifiedData}`)
     window.localStorage.setItem(storageName, stringifiedData)
+    return // no return value unless need to keep access to a local useEffect var between renders
   }, [storageName, data])
 
+  // useLo
   return [data, setData]
 }
 
-function StashData({data = 'defaultString', storageName = 'defaultStorage'}) {
+function StashData({data = UNDEFINED, storageName = 'stash-unnamedStorage'}) {
+  // Note setting the UNDEFINED string constant HERE will allow undefined to be stashed
+  // BUT, if undefined (not the above string) is set anywhere else, or is nested
+  // in a dataType, the JSON.stringify() will skip that item completely.
+  // so most cases of `undefined` will NOT be encoded or saved to storage
   const [storedData, setStoredData] = useLocalStorageState(storageName, data)
 
+  // TODO: implement these so can test *changing* the data, to see if that functionality works
   //   function handleChange(event) {
   //     setStoredData(event.target.value)
   //   }
@@ -381,11 +382,11 @@ function StashData({data = 'defaultString', storageName = 'defaultStorage'}) {
   return (
     <div>
       storageName: {storageName} <br />
-      {/* hello data: {(data && data.toString()) || 'FALSEY JSX VALUE'} <br />
-      storedData: {(storedData && storedData.toString()) ||
-        'FALSEY JSX VALUE'}{' '}
+      hello data: {data?.toString() || 'Cannot Store'}
       <br />
-      <br /> */}
+      storedData: {(storedData && storedData?.toString()) || 'FALSEY JSX VALUE'}
+      <br />
+      <br />
     </div>
   )
 }
@@ -426,14 +427,57 @@ function App() {
         <StashData data={-Infinity} storageName="stash-n-Infinity" />
       </div>
       <div>
-        <h5>cannot do</h5>
+        <StashData storageName="stash-nodata" />
+      </div>
+      <div>
+        <h5>
+          cannot do (function or symbol breaks, causes component to not render
+          anything)
+        </h5>
         {/* <StashData data={dummyFunction} storageName="stash-Function" /> */}
         {/* <StashData data={dummySymbol} storageName="stash-Symbol" /> */}
       </div>
     </>
   )
 }
-//
+// Constants for JSON reviver and replace callbacks to parse and stringify
+
+// These constants are defined OUTSIDE THE COMPONENT, because they will not change between renders
+// WARNING, IF CHANGE THEM , old storage values will be invalid and can
+//  cause the program to crash or have unexpected results.
+
+// They are used by the reviver and replacer functions in useEffect and useState,
+//  so would have to be duplicated INSIDE BOTH functions, to avoid an dependency
+//  array issue
+
+// Strings used to encode/parse data that JSON.stringify does not natively
+//  preserve original data (and we are interested in preserving)
+//  needed for the JSON reviver and replacer functions
+const ENCODING_KEY = '**JSON_STRINGIFIED**_'
+
+const NAN = ENCODING_KEY + 'NAN'
+const INFINITY = ENCODING_KEY + 'INFINITY'
+const NEGATIVE_INFINITY = ENCODING_KEY + 'NEGATIVE_INFINITY'
+// null and arrays (without stringed keys) and other objects
+//      (except functions and symbols) are
+//      correclty stringified, natively
+
+// Will NOT work! the Prototype toJSON() would need to be overridden
+//   or I would need to manually change the data, including recursion
+//   to make this happen. JSON.stringify replacer function will not operate on
+//   undefined, bigint, function, symbol, etc. No matter what I tell it.
+const UNDEFINED = ENCODING_KEY + 'UNDEFINED'
+const BIGINT = ENCODING_KEY + 'BIGINT' //reviver BigInt(remainingstring)
+
+// CANNOT DO:
+// - const SYMBOL = 'SYMBOL'
+//   cannot use replacer function will NOT work on Symbols.
+//   it will always return an empty object ! {}
+//   see MDN example at https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+//  const STRINGED_ARRAY ='STRINGED_ARRAY'
+// - ARRAY with Stringed Keys. It will store a regular array instead
+
+// - cannot store a FUNCTION.
 
 // Stringify Examples
 /* eslint-disable */
