@@ -124,7 +124,7 @@ function useLocalStorageState(
   storageName,
   defaultValue = 'UNDEFINED-defaultValue-OK?-or-(changeBackToEmptyString)',
 ) {
-  console.log(storageName, defaultValue)
+  //   console.log(storageName, defaultValue)
 
   // lazy initialization from value in storage, (if exists)
   const [data, setData] = React.useState(
@@ -132,10 +132,11 @@ function useLocalStorageState(
     //   JSON.parse(window.localStorage.getItem(storageName))?.data ??
     //   defaultValue,
     // () => window.localStorage.getItem(keyName) || defaultValue,
+
     () => {
       const parseReviver = function (retrievedData) {
         const type = typeof retrievedData
-        console.log('retrievedData', retrievedData, 'type', type)
+        // console.log('retrievedData', retrievedData, 'type', type)
 
         let restoreDataAs // = retrievedData
         if (type !== 'string') {
@@ -147,7 +148,11 @@ function useLocalStorageState(
         }
 
         const encodedValue = retrievedData.slice(ENCODING_KEY.length)
-        console.log(encodedValue, ':\n    ')
+        // Note: if the ENCODING_KEY string ever changed, previously stored values
+        //  that used that string prefix could not longer be read back in,
+        //  Also, the data would be read back in as a string, instead of the proper
+        //  data type, which could cause a run-time error, or other misc bugs.
+        // console.log(encodedValue, ':\n    ')
 
         switch (encodedValue) {
           //   switch (retrievedData.slice(ENCODING_KEY.length)) {
@@ -160,27 +165,43 @@ function useLocalStorageState(
           //   break`
           case UNDEFINED:
             restoreDataAs = undefined
+            // NOTE: stringify would never assign this value, it can only be set
+            // manually, such as using the UNDEFINED constant as a default
+            // value as a functional component default value!
             console.log('restore Data as:\n\t', restoreDataAs)
             return restoreDataAs
             break // eslint-disable-line
           case NAN:
             restoreDataAs = Number.NaN
-            console.log('restore Data as:\n\t', restoreDataAs)
+            // console.log('restore Data as:\n\t', restoreDataAs)
             return restoreDataAs
             break // eslint-disable-line
           case INFINITY:
             restoreDataAs = Number.POSITIVE_INFINITY
-            console.log('restore Data as:\n\t', restoreDataAs)
+            // console.log('restore Data as:\n\t', restoreDataAs)
             return restoreDataAs
             break // eslint-disable-line
           case NEGATIVE_INFINITY:
             restoreDataAs = Number.NEGATIVE_INFINITY
-            console.log('restore Data as:\n\t', restoreDataAs)
+            // console.log('restore Data as:\n\t', restoreDataAs)
             return restoreDataAs
             break // eslint-disable-line
           case BIGINT:
             restoreDataAs = new BIGINT(retrievedData)
-            console.log('restore Data as:\n\t', restoreDataAs)
+            // console.log('restore Data as:\n\t', restoreDataAs)
+            return restoreDataAs
+            break // eslint-disable-line
+          case COULD_NOT_BE_STRINGIFIED:
+            // NEVER RUNS!!
+            restoreDataAs = undefined
+            // This restores a testing intervention that I added, so JSON.parse()
+            //  acts as though the data was never stored, as this data indeed
+            //  would not normally be capable of being stored by JSON.stringify
+            console.log(
+              'restore Data as:\n\t',
+              restoreDataAs,
+              'via: COULD_NOT_BE_STRINGIFIED',
+            )
             return restoreDataAs
             break // eslint-disable-line
         } //switch
@@ -189,30 +210,30 @@ function useLocalStorageState(
       const restoredData =
         JSON.parse(window.localStorage.getItem(storageName), parseReviver) ||
         defaultValue
-      console.log(
-        '\n.............\nrestored Data AS:',
-        restoredData,
-        'storageName: ',
-        storageName,
-        '\n.............\n',
-      )
+      //   console.log(
+      //     '\n.............\nrestored Data AS:',
+      //     restoredData,
+      //     'storageName: ',
+      //     storageName,
+      //     '\n.............\n',
+      //   )
       return restoredData // set as initial value in useState function call
     },
   )
 
   // update Storage when its value changes;
   React.useEffect(() => {
-    console.log('==========useEffect==========')
+    // console.log('==========useEffect==========')
     const JSONreplacer = function (key_unused, data) {
       const dataType = typeof data
       let storeDataAs = data
 
-      let storedAsMessage
-      let errorMessageCannot = `${storageName}: ${dataType} cannot be stashed to localstorage as intended. It will be restored as ${storedAsMessage}`
-      // Invalid arguments are Functions, Symbols, etc, which are not even data types
-      // JSON.stringify turns them into undefined and/or discards them altogether
-      let errorMessageEncoded = `${storageName}: ${dataType} will be specially encoded with the string
-        ..............${storeDataAs}, but *should* be restored with its original value`
+      //   let storedAsMessage
+      //   let errorMessageCannot = `${storageName}: ${dataType} cannot be stashed to localstorage as intended. It will be restored as ${storedAsMessage}`
+      //   // Invalid arguments are Functions, Symbols, etc, which are not even data types
+      //   // JSON.stringify turns them into undefined and/or discards them altogether
+      //   let errorMessageEncoded = `${storageName}: ${dataType} will be specially encoded with the string
+      //     ..............${storeDataAs}, but *should* be restored with its original value`
 
       storeDataAs = data
       switch (dataType) {
@@ -227,7 +248,7 @@ function useLocalStorageState(
           // TODO: remove this
           // TEMP, to track results
           storeDataAs = UNDEFINED
-          console.log(errorMessageEncoded)
+          //   console.log(errorMessageEncoded)
           break
 
         // encoded, depending
@@ -237,19 +258,20 @@ function useLocalStorageState(
           // These numbers are incorrectly JSON.stringified as null.
           if (Number.isNaN(data)) {
             storeDataAs = NAN
-            console.log(errorMessageEncoded)
+            // console.log(errorMessageEncoded)
           } else if (data === Number.POSITIVE_INFINITY) {
             storeDataAs = INFINITY
-            console.log(errorMessageEncoded)
+            // console.log(errorMessageEncoded)
           } else if (data === Number.NEGATIVE_INFINITY) {
             storeDataAs = NEGATIVE_INFINITY
-            console.log(errorMessageEncoded)
+            // console.log(errorMessageEncoded)
           }
           break
 
         case 'bigint':
           storeDataAs = BIGINT + data.toString
-          console.log(errorMessageEncoded)
+          //   console.log(errorMessageEncoded)
+
           // stringify natively produces a runtime error
           // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
           // BigInt produces error, but can instead convert it to a string
@@ -282,9 +304,10 @@ function useLocalStorageState(
 
         // cannot store
         case 'function':
-          storedAsMessage = 'undefined'
-          console.log(errorMessageCannot)
+          //   storedAsMessage = 'undefined'
           storeDataAs = data
+          //   console.log(errorMessageCannot)
+
           // stringify turns it into undefined, which does not get output at all.
           // Completely ignored.
           // cannot be stringified
@@ -325,8 +348,9 @@ function useLocalStorageState(
           break
 
         case 'symbol':
-          storedAsMessage = '{}'
-          console.log(errorMessageCannot)
+          //   storedAsMessage = '{}'
+          // console.log(errorMessageCannot)
+
           // stringify turns it into undefined, which does not get output at all.
           // Completely ignored.
           // Or does it turn it into {}.
@@ -340,24 +364,42 @@ function useLocalStorageState(
       } // switch
 
       //   console.dir({storageName, data, storeDataAs})
-      console.log(
-        'storageName:',
-        storageName,
-        'data:',
-        data,
-        'storeDataAs:',
-        storeDataAs,
-      )
+      //   console.log(
+      //     'storageName:',
+      //     storageName,
+      //     'data:',
+      //     data,
+      //     'storeDataAs:',
+      //     storeDataAs,
+      //   )
+
+      //   if (typeof storeDataAs === 'undefined') {
+      //     // intervention only for non-nested data, so localStorage item will be
+      //     // created. Mostly this is for testing. It will be restored as undefined
+      //     storeDataAs = COULD_NOT_BE_STRINGIFIED
+      //     // NOPE, this will not work either! For unsupported data, stringify
+      //     //  never runs the replacer function. So this line never is read
+      //   }
       return storeDataAs
     }
 
-    const stringifiedData = JSON.stringify(data, JSONreplacer)
+    let stringifiedData = JSON.stringify(data, JSONreplacer)
+    // console.log(typeof stringifiedData, stringifiedData)
+
+    // otherwise the storage space will not be created (useful for testing)
+    // stringify returns string, or undefined, or throws a cannot...BigInt error
+    if (typeof stringifiedData === 'undefined') {
+      // NEVER RUNS!
+      console.log('stringify', COULD_NOT_BE_STRINGIFIED)
+      stringifiedData = COULD_NOT_BE_STRINGIFIED
+    }
 
     window.localStorage.setItem(storageName, stringifiedData)
-    return // no return value unless need to keep access to a local useEffect var between renders
+    return // no return value for useEffect unless need to keep access to a local useEffect var between renders
   }, [storageName, data])
 
-  // useLo
+  // do NOT return stringifiedData, just want that to goto storage.
+  // return the ORIG data!
   return [data, setData]
 }
 
@@ -376,7 +418,7 @@ function StashData({data = UNDEFINED, storageName = 'stash-unnamedStorage'}) {
   // silence the compiler
   if (false) {
     setStoredData()
-    console.log(storedData)
+    // console.log(storedData)
   } // DELETE
 
   return (
@@ -455,12 +497,20 @@ function App() {
 //  needed for the JSON reviver and replacer functions
 const ENCODING_KEY = '**JSON_STRINGIFIED**_'
 
+const COULD_NOT_BE_STRINGIFIED =
+  ENCODING_KEY +
+  'DATA TYPE COULD NOT BE ENCODED, RESTORED DATA RETURNED AS UNDEFINED'
+// This can only work on a top level, not a nested variable of an offending
+// data type. Normally, it would be undefined, and thus not returned from
+// JSON.stringify at all, thus never stored, and the storage variable would
+// not even be created.
+
 const NAN = ENCODING_KEY + 'NAN'
 const INFINITY = ENCODING_KEY + 'INFINITY'
 const NEGATIVE_INFINITY = ENCODING_KEY + 'NEGATIVE_INFINITY'
 // null and arrays (without stringed keys) and other objects
 //      (except functions and symbols) are
-//      correclty stringified, natively
+//      correctly stringified, natively
 
 // Will NOT work! the Prototype toJSON() would need to be overridden
 //   or I would need to manually change the data, including recursion
