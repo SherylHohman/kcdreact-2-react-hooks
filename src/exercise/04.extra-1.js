@@ -11,12 +11,17 @@
 import * as React from 'react'
 
 function Board() {
-  // const resetSquares = () => Array(9).fill(null)    //lazy initialization
-  // const [squares, setSquares] = React.useState(resetSquares) //lazy initialization
-  // no need to use lazy initialization. Not an expensive array fill
-
+  const SAVED_GAME = 'TicTacToe'
   const emptySquares = Array(9).fill(null)
-  const [squares, setSquares] = React.useState(emptySquares)
+
+  const [squares, setSquares] = React.useState(() => {
+    return JSON.parse(window.localStorage.getItem(SAVED_GAME)) ?? emptySquares
+  })
+
+  React.useEffect(() => {
+    window.localStorage.setItem(SAVED_GAME, JSON.stringify(squares))
+    return // (no cleanup function to return)
+  }, [squares])
 
   const winner = calculateWinner(squares)
   const nextValue = calculateNextValue(squares)
@@ -24,13 +29,11 @@ function Board() {
 
   // This is the function your square click handler will call. `square` should
   // be an index. So if they click the center square, this will be `4`.
-    if (squares[square] || Boolean(winner)) {
-      return
+  function selectSquare(square) {
+    if (winner || squares[square]) {
+      return // early exit, no state change
     }
-    //
-    // 🦉 It's typically a bad idea to mutate or directly change state in React.
-    // Doing so can lead to subtle bugs that can easily slip into production.
-    //
+    // 🦉 REM: do NOT mutate or directly change state in React.
     let newSquares = [...squares]
     newSquares[square] = nextValue
     setSquares(newSquares)
@@ -50,7 +53,6 @@ function Board() {
 
   return (
     <div>
-      {/* 🐨 put the status in the div below */}
       <div className="status">{status}</div>
       <div className="board-row">
         {renderSquare(0)}
@@ -84,8 +86,10 @@ function Game() {
   )
 }
 
-// eslint-disable-next-line no-unused-vars
 function calculateStatus(winner, squares, nextValue) {
+  // squares.every(Boolean)
+  // takes the item, passes it in to Boolean to coerce it into truthy or falsey value
+  // so...if every square is true (has an X or O) then this is true, else false
   return winner
     ? `Winner: ${winner}`
     : squares.every(Boolean)
@@ -93,12 +97,13 @@ function calculateStatus(winner, squares, nextValue) {
     : `Next player: ${nextValue}`
 }
 
-// eslint-disable-next-line no-unused-vars
 function calculateNextValue(squares) {
+  // https://michaeluloth.com/filter-boolean
+  // filter(Boolean) filters out falsey objects. In this case null's.
+  // so it counts only X and O's. X ALWAYS goes first. Hence Odd/Even shows who is next.
   return squares.filter(Boolean).length % 2 === 0 ? 'X' : 'O'
 }
 
-// eslint-disable-next-line no-unused-vars
 function calculateWinner(squares) {
   const lines = [
     [0, 1, 2],
