@@ -36,19 +36,6 @@
     )
 */
 
-// SH Notes: the History feature is for storing history of the CURRENT game only.
-//  (My thought was saving all prior games! Maybeeee, I 'll try implementing that too.)
-//  For tic-tac-toe, prior games history (and my mind's obsession with saving
-//      historical data) history record of gameboards & wins/losses seems more
-//      interesting. Also, I'm thinking arcade style High Scores, Ha, ha.
-//  No. THIS exercise is to save MOVES in the current game, so you can back-up
-//      and try again. That seems useful for SOLITAIRE! (less so for tictactoe)
-//      But it IS a good exercise. And it is highly relevant for regular usage
-//      in apps. For example, editing (text or any data entry!!)
-//  So THIS exercise is more relevant, but was not DESCRIBED clearly.
-//  History in this context is History of MOVES!
-//  Not Game History (or history of past games.)
-
 import * as React from 'react'
 
 import {useLocalStorageState} from '../utils'
@@ -63,10 +50,9 @@ function Board() {
   const nextValue = calculateNextValue(squares)
   const status = calculateStatus(winner, squares, nextValue)
 
-  // square click handler will call it. `square` should be an index.
   function selectSquare(square) {
     if (winner || squares[square]) {
-      return // early exit, no state change, do not update/mark the square
+      return
     }
     // 🦉 REM: do NOT mutate state arrays/objects, etc in React.
     let newSquares = [...squares]
@@ -162,3 +148,36 @@ function App() {
 }
 
 export default App
+
+/*
+TODO: submit a PR to clarify the task.
+    // clarification: history is for history of MOVES in CURRENT game.
+    //     NOT for history of prior game wins/losses (final board)
+    //         ala arcade like HIGH SCORES
+
+    FROM:
+    "...the extra version supports keeping a history of the game
+        and allows you to go backward and forward in time."
+
+    TO:
+    "...the extra version supports keeping a history of the CURRENT game
+        and allows you to go backward and forward in time."
+
+    Disambiguate between keeping a history (historical record) of
+        PAST Games (final game board, showing who won/lost)
+        reminiscent of arcade HIGH SCORES, and undo/redo editing feature
+        for CURRENT game only.
+ */
+
+// SH Notes: the History feature is for storing history of the CURRENT game only.
+//  (My thought was saving all prior games! Maybeeee, I 'll try implementing that too.)
+//  For tic-tac-toe, prior games history (and my mind's obsession with saving
+//      historical data) history record of gameboards & wins/losses seems more
+//      interesting. Also, I'm thinking arcade style High Scores, Ha, ha.
+//  No. THIS exercise is to save MOVES in the current game, so you can back-up
+//      and try again. That seems useful for SOLITAIRE! (less so for tictactoe)
+//      But it IS a good exercise. And it is highly relevant for regular usage
+//      in apps. For example, editing (text or any data entry!!)
+//  So THIS exercise is more relevant, but was not DESCRIBED clearly.
+//  History in this context is History of MOVES!
+//  Not Game History (or history of past games.)
