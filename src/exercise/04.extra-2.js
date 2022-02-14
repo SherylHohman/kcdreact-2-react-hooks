@@ -13,10 +13,15 @@
 
 import * as React from 'react'
 
+// useLocalStorageState is a Custom Hook!
+//  This hook may be useful to reuse in personal apps!
+import {useLocalStorageState} from '../utils'
+
 function Board() {
   const SAVED_GAME = 'TicTacToe'
   const emptySquares = Array(9).fill(null)
 
+  /*
   const [squares, setSquares] = React.useState(() => {
     return JSON.parse(window.localStorage.getItem(SAVED_GAME)) ?? emptySquares
   })
@@ -25,12 +30,20 @@ function Board() {
     window.localStorage.setItem(SAVED_GAME, JSON.stringify(squares))
     return // (no cleanup function to return)
   }, [squares])
+  */
+
+  // replaces above localStorage inside useEffect AND useState calls
+  // Note that the custom hook calls useEffect.
+  //    which highlights that useEffect can be called any number of times in a
+  //    component (whether it is wrapped inside another hook like this one is,
+  //    or whether it is called directly. useEffect() is just a function call!)
+  const [squares, setSquares] = useLocalStorageState(SAVED_GAME, emptySquares)
 
   const winner = calculateWinner(squares)
   const nextValue = calculateNextValue(squares)
   const status = calculateStatus(winner, squares, nextValue)
 
-  // This is the function your square click handler will call. `square` should
+  // square click handler will call. `square` should
   // be an index. So if they click the center square, this will be `4`.
   function selectSquare(square) {
     if (winner || squares[square]) {
@@ -91,8 +104,14 @@ function Game() {
 
 function calculateStatus(winner, squares, nextValue) {
   // squares.every(Boolean)
-  // takes the item, passes it in to Boolean to coerce it into truthy or falsey value
-  // so...if every square is true (has an X or O) then this is true, else false
+  // === squares.every( (item) => Boolean(item))
+  // It is a short-hand for pass-through parameters:
+  //    takes the item argument, passes it in to Boolean() with the same argument,
+  //    to coerce it (item) into truthy or falsey value, which it returns.
+  //    if all these arguments are true, every returns true. A single false causes
+  //    "every" to return false
+  // so...if every square is true (has an X or O string) then true, else false
+  // https://michaeluloth.com/filter-boolean
   return winner
     ? `Winner: ${winner}`
     : squares.every(Boolean)
@@ -103,7 +122,8 @@ function calculateStatus(winner, squares, nextValue) {
 function calculateNextValue(squares) {
   // https://michaeluloth.com/filter-boolean
   // filter(Boolean) filters out falsey objects. In this case null's.
-  // so it counts only X and O's. X ALWAYS goes first. Hence Odd/Even shows who is next.
+  // So filter.length has, hence counts, only X and O strings.
+  // X ALWAYS goes first. So if length is even, it is X's turn.
   return squares.filter(Boolean).length % 2 === 0 ? 'X' : 'O'
 }
 
