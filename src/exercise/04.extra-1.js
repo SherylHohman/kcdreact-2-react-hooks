@@ -88,8 +88,14 @@ function Game() {
 
 function calculateStatus(winner, squares, nextValue) {
   // squares.every(Boolean)
-  // takes the item, passes it in to Boolean to coerce it into truthy or falsey value
-  // so...if every square is true (has an X or O) then this is true, else false
+  // === squares.every( (item) => Boolean(item))
+  // It is a short-hand for pass-through parameters:
+  //    takes the item argument, passes it in to Boolean() with the same argument,
+  //    to coerce it (item) into truthy or falsey value, which it returns.
+  //    if all these arguments are true, every returns true. A single false causes
+  //    "every" to return false
+  // so...if every square is true (has an X or O string) then true, else false
+  // https://michaeluloth.com/filter-boolean
   return winner
     ? `Winner: ${winner}`
     : squares.every(Boolean)
@@ -100,7 +106,8 @@ function calculateStatus(winner, squares, nextValue) {
 function calculateNextValue(squares) {
   // https://michaeluloth.com/filter-boolean
   // filter(Boolean) filters out falsey objects. In this case null's.
-  // so it counts only X and O's. X ALWAYS goes first. Hence Odd/Even shows who is next.
+  // So filter.length has, hence counts, only X and O strings.
+  // X ALWAYS goes first. So if length is even, it is X's turn.
   return squares.filter(Boolean).length % 2 === 0 ? 'X' : 'O'
 }
 
