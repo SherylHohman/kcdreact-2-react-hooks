@@ -67,22 +67,13 @@ function Board() {
     if (winner || squares[square]) {
       return
     }
+
     let newSquares = [...squares]
-    newSquares[square] = nextValue
-
-    // on new game: length=1, moveNumber=1,
-    //  but index 0 (historyIndex===0)
-    //  current gameboard is stored at game[0].
-
-    // REM: pass slice 1 more than the last index we want to keep
     let newGameHistory = gameHistory.slice(0, historyIndex + 1)
 
-    // setGameHistory(newGameHistory.push(newSquares))
-    // for some reason above line seems to cause errors
-    // so do in 2 steps as below
-    newGameHistory.push(newSquares)
-    setGameHistory(newGameHistory)
-    setHistoryIndex(historyIndex + 1)
+    newSquares[square] = nextValue
+    setGameHistory([...newGameHistory, newSquares])
+    setHistoryIndex(historyIndex + 1) // increment index
   }
 
   function restart() {
@@ -99,38 +90,33 @@ function Board() {
     )
   }
 
-  function selectMoveNumber(i) {
-    setHistoryIndex(i)
-  }
-
   function renderHistoryList() {
     // the entire list
     return gameHistory.map((squares, index) => {
       let historyLabel = ''
       switch (index) {
         case 0:
-          historyLabel = `${index}. Return to Start of game`
+          historyLabel = `Return to Start of game`
           break
         case historyIndex:
-          historyLabel = `${index}. (Currently Showing: Move #${index})`
+          historyLabel = `(Currently Showing)`
           break
         default:
-          historyLabel = `${index}. Return To Move #${index}`
+          historyLabel = `Return To Move #${index}`
           break // JIC move this option higher
       }
 
       // each history item
       return (
-        <React.Fragment key={index}>
+        <li key={index}>
           <button
             disabled={index === historyIndex}
             className="move"
-            onClick={() => selectMoveNumber(index)}
+            onClick={() => setHistoryIndex(index)}
           >
             {historyLabel}
           </button>
-          <br />
-        </React.Fragment>
+        </li>
       )
     })
   }
@@ -139,7 +125,9 @@ function Board() {
     <div className="game">
       <div className="current-move">
         <div className="status">{status}</div>
-        <div className="history">{renderHistoryList()}</div>
+        <ol start="0" className="history-list">
+          {renderHistoryList()}
+        </ol>
       </div>
       <div className="current-gameboard">
         <div className="board-row">
@@ -213,7 +201,37 @@ function App() {
 
 export default App
 
+/* SH a puzzle to be answered:
+   in selectSquare
+
+   // for some reason above line CRASHES during runtime: WHY!!??!
+        setGameHistory(newGameHistory.push(newSquares))
+
+    // so do in 2 steps as below, is absolutely FINE!!:
+        newGameHistory.push(newSquares)
+        setGameHistory(newGameHistory)
+
+    // more react-ish way, although we are creating a newGameHistory array TWICE
+      //  once with slice, then again below.
+      // using push, we only create the new state array once.
+      // (it only needs to be created once in this function!! to prevent mutation bugs)
+
+        setGameHistory([...newGameHistory, newSquares])
+*/
+
+/* SH minor app/file notes:
+    // on new game: length=1, moveNumber=1,
+    //  but index 0 (historyIndex===0)
+    //  current gameboard is stored at game[0].
+*/
+
 /* SH minor JS reminder notes:
+
+    // Start a css ordered list at a number other than 1.
+    //  pass in start=starting_number
+    //  eg: <ol start="0"> to begin the list at 0.
+
+    // REM: pass slice 1 more than the last index we want to keep
     // GOTCHA! REM slice(0,0)==[].
     // slice (firstIndex, lastWantedIndex + 1)
     // If give an end index, it Must ALWAYS be 1 more than want.
@@ -228,7 +246,6 @@ export default App
     // === squares.every( (item) => Boolean(item))
     //    true if all strings (X or O), false if a null exists
     // https://michaeluloth.com/filter-boolean
-
 
 */
 
