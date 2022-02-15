@@ -40,7 +40,37 @@ import * as React from 'react'
 
 import {useLocalStorageState} from '../utils'
 
-function Board() {
+function Board({squares, selectSquare}) {
+  function renderSquare(i) {
+    return (
+      <button className="square" onClick={() => selectSquare(i)}>
+        {squares[i]}
+      </button>
+    )
+  }
+
+  return (
+    <div className="current-gameboard">
+      <div className="board-row">
+        {renderSquare(0)}
+        {renderSquare(1)}
+        {renderSquare(2)}
+      </div>
+      <div className="board-row">
+        {renderSquare(3)}
+        {renderSquare(4)}
+        {renderSquare(5)}
+      </div>
+      <div className="board-row">
+        {renderSquare(6)}
+        {renderSquare(7)}
+        {renderSquare(8)}
+      </div>
+    </div>
+  )
+}
+
+function Game() {
   const SAVED_GAME = 'TicTacToe-History-04.extra-3'
   const CURRENT_MOVE = 'TicTacToe-historyIndex-04.extra-3'
 
@@ -82,14 +112,6 @@ function Board() {
     setHistoryIndex(startingMoveNumber)
   }
 
-  function renderSquare(i) {
-    return (
-      <button className="square" onClick={() => selectSquare(i)}>
-        {squares[i]}
-      </button>
-    )
-  }
-
   function renderHistoryList() {
     // the entire list
     return gameHistory.map((squares, index) => {
@@ -105,7 +127,6 @@ function Board() {
           historyLabel = `Return To Move #${index}`
           break // JIC move this option higher
       }
-
       // each history item
       return (
         <li key={index}>
@@ -129,35 +150,12 @@ function Board() {
           {renderHistoryList()}
         </ol>
       </div>
-      <div className="current-gameboard">
-        <div className="board-row">
-          {renderSquare(0)}
-          {renderSquare(1)}
-          {renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {renderSquare(3)}
-          {renderSquare(4)}
-          {renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {renderSquare(6)}
-          {renderSquare(7)}
-          {renderSquare(8)}
-        </div>
+
+      <div className="game-board">
+        <Board squares={squares} selectSquare={selectSquare} />
         <button className="restart" onClick={restart}>
           restart
         </button>
-      </div>
-    </div>
-  )
-}
-
-function Game() {
-  return (
-    <div className="game">
-      <div className="game-board">
-        <Board />
       </div>
     </div>
   )
@@ -220,6 +218,16 @@ export default App
 */
 
 /* SH minor app/file notes:
+
+    // Most logic was moved from Board component TO Game component
+    //  Board only prints the gameboard and recieves click events
+    //  for the squares. But the square onclick handler is in parent
+    //  Game component. It is passed down through props.
+
+    //  Game component now has squares, selectSquare, and everything
+    //    to do with history.
+    //  It also now renders the reset button, status, and the history buttons.
+
     // on new game: length=1, moveNumber=1,
     //  but index 0 (historyIndex===0)
     //  current gameboard is stored at game[0].
