@@ -41,98 +41,52 @@ import * as React from 'react'
 import {useLocalStorageState} from '../utils'
 
 function Board() {
-  const SAVED_GAME = 'TicTacToe-withHistory-04.extra-3'
+  const SAVED_GAME = 'TicTacToe-History-04.extra-3'
   const CURRENT_MOVE = 'TicTacToe-historyIndex-04.extra-3'
 
-  // const emptySquares = Array(9).fill(null)
-  // const emptySquares = [Array(9).fill(null)]
   const startingSquares = Array(9).fill(null)
   const startingMoveNumber = 0
-  const [gameHistory, setGameHistory] = useLocalStorageState(SAVED_GAME, [
-    startingSquares,
-  ])
+
+  // prettier-ignore
+  const [gameHistory, setGameHistory] = useLocalStorageState(
+    SAVED_GAME,
+    [startingSquares]
+  ) // I do not like the way prettier formats the "[startingSquares]"
+
   const [historyIndex, setHistoryIndex] = useLocalStorageState(
     CURRENT_MOVE,
     startingMoveNumber,
   )
-  // const [squares, setSquares] = useLocalStorageState(SAVED_GAME, emptySquares)
+
   const squares = gameHistory[historyIndex]
-  console.log('squares', squares)
-
-  // these 2 values will always change at the same time, so store them together
-  // False, historyIndex DOES change with secting a square.
-  // BUT, selecting a historical historyIndex does NOT change the history Array
-  //  it only changes the current historyIndex (and the squares, which is derived state.)
-
-  // const newGameBoard = {squares: [Array(9).fill(null)], currentMoveNumber: 0}
-  // const [gameHistory, setGameHistory] = useLocalStorageState(
-  //   SAVED_GAME,
-  //   newGameBoard,
-  // )
-
   const winner = calculateWinner(squares)
   const nextValue = calculateNextValue(squares)
   const status = calculateStatus(winner, squares, nextValue)
-
-  // function selectSquare(square) {
-  //   if (winner || squares[square]) {
-  //     return
-  //   }
-  //   // 🦉 REM: do NOT mutate state arrays/objects, etc in React.
-  //   let newSquares = [...squares]
-  //   newSquares[square] = nextValue
-  //   setSquares(newSquares)
-  //   setSquares(newSquares)
-  // }
 
   function selectSquare(square) {
     if (winner || squares[square]) {
       return
     }
-    // 🦉 REM: do NOT mutate state arrays/objects, etc in React.
-    // let newSquares = [...squares]
-    // newSquares[square] = nextValue
-    // setSquares(newSquares)
-    // let newGameHistory = [...gameHistory]
-
-    // temp TODO: update with actual move number, which may be less than the current
-    //   length, if the user has used the history feature.
-    // This value should be accessed directly, it will later be stored as state
-    // const moveNumber = gameHistory.length
-
-    // squares is not derived state, BUT it IS a reference to an (sub)array that
-    //  does exist in state. So still best to NOT mutate it.
-    console.log('oldSquares', squares)
     let newSquares = [...squares]
     newSquares[square] = nextValue
-    console.log('newSquares:', newSquares)
 
-    // on new game: length=1, moveNumber=1, but current gameboard is stored at game[0].
-    // after 1st click: length=2, move=2, but current game stored at gameHistory[1]
-    // also, REM slice(0,0)==[]. If give a final index, it Must ALWAYS be 1 more than want.
+    // on new game: length=1, moveNumber=1,
+    //  but index 0 (historyIndex===0)
+    //  current gameboard is stored at game[0].
 
-    // on new game: length=1, historyIndex=0, (moveNumber=1), as current gameboard is stored at game[0].
-    // after 1st click: length=2, (historyIndex=2) current game stored at gameHistory[1], but moveNumber=2
-    // also, REM slice(0,0)==[]. If give a final index, it Must ALWAYS be 1 more than want.
-    console.log('oldGameHistory       :', gameHistory)
+    // REM: pass slice 1 more than the last index we want to keep
     let newGameHistory = gameHistory.slice(0, historyIndex + 1)
-    console.log('newGameHistory sliced:', newGameHistory)
-
-    // temp - delete newGameHistory assignment
-    // REM RETURN VALUE IS LENGTH OF NEW ARRAY - DO NOT SET IT EQUAL TO ANYTHING
-    newGameHistory.push(newSquares)
-    console.log('newGameHistory pushed:', newGameHistory)
 
     // setGameHistory(newGameHistory.push(newSquares))
-    console.log('newGameHistory updating...(asynch):', newGameHistory)
+    // for some reason above line seems to cause errors
+    // so do in 2 steps as below
+    newGameHistory.push(newSquares)
     setGameHistory(newGameHistory)
-
     setHistoryIndex(historyIndex + 1)
-    console.log('historyIndex updating...(asynch):', historyIndex + 1)
   }
 
   function restart() {
-    // setSquares(emptySquares)
+    // This creates a new array, nothing is mutated
     setGameHistory([startingSquares])
     setHistoryIndex(startingMoveNumber)
   }
@@ -146,37 +100,26 @@ function Board() {
   }
 
   function selectMoveNumber(i) {
-    // TODO update history item number
     setHistoryIndex(i)
-    console.log('selected:', i, gameHistory[i])
   }
 
   function renderHistoryList() {
     // the entire list
     return gameHistory.map((squares, index) => {
-      console.log('map index: ', index)
-      // console.log('map squares', squares)
-      console.log('map historyIndex', historyIndex)
-      // each history item
-
       let historyLabel = ''
-      console.log('-')
       switch (index) {
         case 0:
-          console.log('historyLabel "0":', index, historyIndex)
           historyLabel = `${index}. Return to Start of game`
           break
         case historyIndex:
-          console.log('historyLabel "historyIndex":', index, historyIndex)
           historyLabel = `${index}. (Currently Showing: Move #${index})`
           break
         default:
-          console.log('historyLabel "default":', index, historyIndex)
           historyLabel = `${index}. Return To Move #${index}`
           break // JIC move this option higher
       }
-      console.log('----')
 
+      // each history item
       return (
         <React.Fragment key={index}>
           <button
@@ -233,10 +176,6 @@ function Game() {
 }
 
 function calculateStatus(winner, squares, nextValue) {
-  // squares.every(Boolean)
-  // === squares.every( (item) => Boolean(item))
-  //    true if all strings (X or O), false if a null exists
-  // https://michaeluloth.com/filter-boolean
   return winner
     ? `Winner: ${winner}`
     : squares.every(Boolean)
@@ -274,6 +213,25 @@ function App() {
 
 export default App
 
+/* SH minor JS reminder notes:
+    // GOTCHA! REM slice(0,0)==[].
+    // slice (firstIndex, lastWantedIndex + 1)
+    // If give an end index, it Must ALWAYS be 1 more than want.
+
+    // GOTCHA: do NOT do this:
+    //    newGameHistory = newGameHistory.push(newSquares)
+    //    // 2 (length of array)
+    // REM RETURN VALUE IS LENGTH OF NEW ARRAY - DO NOT SET IT EQUAL TO ANYTHING
+    //   PUSH *IS* the changed (mutated) array!
+
+    // squares.every(Boolean)
+    // === squares.every( (item) => Boolean(item))
+    //    true if all strings (X or O), false if a null exists
+    // https://michaeluloth.com/filter-boolean
+
+
+*/
+
 /*
 TODO: submit a PR to clarify the task.
     // clarification: history is for history of MOVES in CURRENT game.
@@ -306,3 +264,8 @@ TODO: submit a PR to clarify the task.
 //  So THIS exercise is more relevant, but was not DESCRIBED clearly.
 //  History in this context is History of MOVES!
 //  Not Game History (or history of past games.)
+
+// TBF, the task at hand WAS quite interesting. And, truth be told, fun to
+//  undo and redo.
+// Still think language in instructions should reflect the concepts of:
+//  undo, redo, and/or Current Game history!!
