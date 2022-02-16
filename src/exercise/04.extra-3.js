@@ -81,7 +81,7 @@ function Game() {
   const [gameHistory, setGameHistory] = useLocalStorageState(
     SAVED_GAME,
     [startingSquares]
-  ) // I do not like the way prettier formats the "[startingSquares]"
+  ) // prettier formats the "[startingSquares]", in a visually misleading manner
 
   const [historyIndex, setHistoryIndex] = useLocalStorageState(
     CURRENT_MOVE,
@@ -107,7 +107,7 @@ function Game() {
   }
 
   function restart() {
-    // This creates a new array, nothing is mutated
+    // This creates a new array, so nothing is mutated
     setGameHistory([startingSquares])
     setHistoryIndex(startingMoveNumber)
   }
@@ -228,8 +228,9 @@ export default App
     //    to do with history.
     //  It also now renders the reset button, status, and the history buttons.
 
-    // on new game: length=1, moveNumber=1,
-    //  but index 0 (historyIndex===0)
+    // on new game: (history) length=1, moveNumber=1,
+    //  but board is showing index 0 (historyIndex===0),
+    //  next move will be index 1
     //  current gameboard is stored at game[0].
 */
 
