@@ -1,4 +1,4 @@
-/*
+/*  For exercise 5: vanilla-tilt
 Taken from the vanilla-tilt.js demo site:
 https://micku7zu.github.io/vanilla-tilt.js/index.html
 */
@@ -30,6 +30,7 @@ https://micku7zu.github.io/vanilla-tilt.js/index.html
   align-items: center;
 }
 
+/* For exercise 4: tic-tac-toe */
 .game {
   font: 14px 'Century Gothic', Futura, sans-serif;
   margin: 20px;
