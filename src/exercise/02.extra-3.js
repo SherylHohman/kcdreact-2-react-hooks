@@ -47,31 +47,16 @@ function useLocalStorageState(keyName, defaultValue = '') {
     () => window.localStorage.getItem(keyName) ?? defaultValue,
 
     //  Official Solution:
-    // () => window.localStorage.getItem(keyName) || defaultValue,
+    // () => window.localStorage.getItem(key) || defaultValue,
+    // not sure why, but the official solution uses || instead of ??
 
-    // not sure why, but the official solution now uses || instead of ??
-    //  why is it no longer a concern for keyName to not exist, but before it was?
+    //  UPDATE: Official Solution:
+    // () => window.localStorage.getItem(key) ?? defaultValue,
 
-    // If the storage item does not exist, it returns null.
-    //   null will trigger the || and the ??
-    // Now, since every setItem coerces the value into a String,
-    //   The falsey items undefined and 0 are not possible
-    // So the only falsey value remaining is ''
-    //  So, ?? vs || matters if we want a different response to '' than to null
-    //  Interestingly, even if I change the default value to something truthy
-    //   (and call greeting without setting initialValue to anything,
-    //    AND rename the keyName, say to 'name-extra3', so 02.js does not
-    //    conflict with this page in initiallizing a non-existant Storage key
-    //   )
-    //  When the stored value is '', falsey, the || does NOT replace
-    //  the falsey '' with the defaultValue!! WHY?
-    //  Actually there is a weird situation where the input and the storage are out of synch, but..
-    //  Both lines work exactly the SAME.
-    //  So this lends that it is fine that their solution changed it.
-    //  But Why?
-    //  But what case *could* there be a difference? And if none,
-    //  Why were we concerned with this distinction in 3 previous exercises,
-    //    but not THIS one?
+    //  It was a bug. KCD accepted my PR #176 to fix it!
+    //  My fix is the same as #164 which fixed the other 02.extra-credit files,
+    //  but it had missed this file!
+    // I now am a Contributor to CODE category! :-) (PR #177 adds me as a contributor)
   )
 
   // update Storage when its value changes
