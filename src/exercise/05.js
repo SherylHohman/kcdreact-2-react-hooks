@@ -22,7 +22,7 @@ function Tilt({children}) {
   //  each re-render creates a new ref. As the DOM changes, the React ref for
   //  the node changes. (In a way, I said that inside out, or backwards,
   //  but depending on one's point view, it can make more sense to speak as though
-  //  coming from that point of view (DOM or React))
+  //  coming from that point of view (DOM or React)
   const vanillaTiltRef = React.useRef()
 
   React.useEffect(() => {
@@ -124,9 +124,65 @@ function App() {
 }
 
 /* SH NOTES:
-  Styles for this app are located in the file ../styles.css
+  Styles for this app (this file) are defined in the file ../styles.css
     (S:\Classes\Epic_React_Pro-KentCDodds-course-211130\2-react-hooks\src\styles.css)
   They are taken directly from the VanillaTilt repo demo site
-*/
+
+  ----- How to read docs, and translate how to apply plain JS instructions
+        to a React codebase.
+        When they want a DOM element (they get via document.querySelector)
+        We just substitute in our instance of useRefVariable.current in its place.
+        And otherwise follow the instructions for using plain JS
+        (rather than the html version?)
+
+  So, from the examples file (linked to in the README.md docs): https://micku7zu.github.io/vanilla-tilt.js/
+
+  How to use:
+    <div class="your-element" data-tilt></div>
+  ie, add `data-tilt` to the element, (and also have to add the vanilla-tilt script to the end of the file)
+
+  Then it shows that if you want to add OPTIONS, do it this way:
+    <div class="your-element" data-tilt data-tilt-max="50" data-tilt-speed="400" data-tilt-perspective="500"></div>
+  ie, list vanilla-tilt options as (attributes - "properties") on the html element.
+
+  Finally, it show the plain "JS Way" it to do:
+    VanillaTilt.init(document.querySelector(".your-element"), {
+      max: 25,
+      speed: 400
+    });
+
+  NOTICE THAT document.querySelector(<classname>) IS A HANDLE ON THE DOM "node"/ELEMENT
+    IN OUR CASE, REACT REF (from useRef and useEffect ourRef.current)
+    IS OUR HANDLE. We do not use a classname (which is JS way of FINDING the DOM node)
+    We use the REF we created.
+  So (below) instead of "elementName", we are giving it our REF (useRefInstance.current).current
+
+  Compare this to The way we use React.createElement to create JSX
+    React.createElement(elementName, properties, children)
+  OR in the format
+    React.createElement(elementName, {children, ...properties})
+
+  Extrapolating the plain JS Way and React.createElement 2nd format, we get:
+    React.createElement(elementName, { <vanilla-tilt options as key value pairs>})
+  AND noting that elementName in our case is our REF (vanillaTiltRef.current)
+  we get the following:
+    React.createElement(vanillaTiltRef.current, { <options> })
+
+  And translating that back to JSX we have:
+    <div ref=vanillaTiltRef {<vanilla tilt options>} className="className" miscOtherProperties>
+    {children}</div>
+
+  SOOOoooo: now we get at the example code they provide:
+    <div...
+
+    VanillaTilt.init(tiltNode, {
+  //   max: 25,
+  //   speed: 400,
+  //   glare: true,
+  //   'max-glare': 0.5,
+  // })
+  // where tiltNode = vanillaTiltRef.current
+
+  */
 
 export default App
