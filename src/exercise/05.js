@@ -183,6 +183,71 @@ function App() {
   // })
   // where tiltNode = vanillaTiltRef.current
 
+  -----
+
+  More notes on how I think about how to translate library usage
+		instructions from vanilla JS usage and DOM access (via document.querySelector)
+		to how to use it with React and a useRef variable (myUseRefVar.current)
+	As well as how to interpret the usage "docs"/examples in general
+	The comments are very raw, and many are incorrect. It is my live
+		thought processes, trying to figure it out, with as little "peeking"
+		at the exercise coding hints as possible.
+
+  One point I need to pay attention to is that there are 2 very different
+		parts to the usage. One is the HTML (in my case JSX) element.
+		And the other part is the JS script that is needed to "activate"
+		or attach the library script to that HTML (JSX) element, including
+		the preferred tilt options we want it to run with.
+
+  This is the part I was just beginning to see as I stopped for the
+		night. Originally, I thought it was one or the other ( I know... duh)
+		So, this library is a script that gets attached to an element.
+		The other part is the API to attach their script to the element,
+		AND set some configurable options for how their script will run.
+		Their script will takes care of the event listeners, the cursor, and
+		TRANSFORMING the element (warping the graphic, colors, etc).
+
+  It turns out that the biggest hurdle of this library might have been in
+    understanding what it is actually doing, and the basics of how it works. Now
+		that I think I understand (am developing an understanding of) the library
+		itself, in terms of its vanilla JS implementation, it seems the React
+    portion may be fairly easy and straight forward.
+    - A useRef.current variable simply replaces the
+		  `document.QuerySelector(".classname"-"id"-or-whatever)`.
+    - a function call `VanillaTilt.init()` attaches their script to a DOM
+      element that is passed into this function call.
+    - optionally, a set of custom options can also be passed into this `init`
+      function as a second argument, in the form of an object.
+    - their script attaches an event handler to the given DOM element.
+      As such, we need to remove the event handler when it is no longer relevant
+      `VanillaTilt.destroy()` removes the event handler.
+      It is to be called if: 1) we no longer want vanilla-tilt to control
+      (produce side effects, manipulate the graphical display) of the element,
+      or 2) we remove the element from the DOM.
+      Its parameter is the same as the (1st argument) of the init function:
+      a DOM reference.
+      In our case, that is our `useRefVariable.current` or in vanillaJS, the
+      document.querySelector(".classname"-"id"-or-whatever).
+
+      ----
+
+      OK, made a couple PR's to Vanilla Tilt that got merged!
+       -(typos on main branch README.md)
+       - typos on gh-pages branch: Examples page, and README.md (same as on main)
+
+       And finally, I think I understtand BOTH vanilla tilt AND how to use it
+        with React. create a useEffect, that is called only once (so an EMPTY []
+          dependency array) to call its initialization the script
+          (`vanillaTilt.init`), which attaches the script to the DOM node (REF)
+          we give it, and sets the options we (optionally) can pass in as well.
+            ie: `vanillaTilt.init(myRef.current, optionsObject)`
+          useEffect also sets the cleanup function `vanillaTilt.destroy()`
+            ie: `vanillaTilt.destroy(myRef.current)
+
+      Note that the inner elements (children elements to the vanilla-tilt "root"
+        element) are used for the parallax effect option, and is acheived by
+        through the `transform` and `transform-style` settings.
+
   */
 
 export default App
