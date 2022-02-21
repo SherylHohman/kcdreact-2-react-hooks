@@ -20,9 +20,9 @@ function Tilt({children}) {
   // 🐨 create a ref here with React.useRef()
 
   //  each re-render creates a new ref. As the DOM changes, the React ref for
-  //  the node changes. (In a way, I said that inside out, or backwards,
+  //  the node changes. (In a way, I said that inside out, or backwards.
   //  but depending on one's point view, it can make more sense to speak as though
-  //  coming from that point of view (DOM or React)
+  //  coming from that point of view from the DOM instead of from React)
   const vanillaTiltRef = React.useRef()
 
   React.useEffect(() => {
@@ -31,17 +31,17 @@ function Tilt({children}) {
       glare: true,
       'max-glare': 0.5,
       //'full-page-listening': false, //prefer true, but start with false
-      scale: 1.1, // 2 = 200%, 1.5 = 150%, etc.. //prefer larger, but start with default `1` (no zooming on hover)
+      // : 1.1, // 2 = 200%, 1.5 = 150%, etc.. //prefer larger, but start with default `1` (no zooming on hover)
       //"mouse-event-element":  null,   // css-selector or link to HTML-element that will be listening to mouse events
     }
 
-    // at each render, the React Ref to the DOM node changes. So must update the
+    /* at each render, the React Ref to the DOM node changes. So must update the
     //  library to reference the new REF, in order for React and the library to
     //  interact with it.
 
     // update the library with the new React Reference to the DOM node hosting
     // this library's "vanilla-tilt" element.
-    /* const element = document.querySelector(".js-tilt");
+    // const element = document.querySelector(".js-tilt");
     // this is how docs say to locate or get a handle to the DOM element
     // where the library is instanciated.
     // But that is when NOT using React.
@@ -49,8 +49,10 @@ function Tilt({children}) {
     // React for a `ref` to the DOM element.
     */
     // const element = document.querySelector(".js-tilt");
-    const element = vanillaTiltRef.current
-    VanillaTilt.init(element, vanillaTiltInitialOptions)
+
+    // the DOM node is saved to vanillaTiltElement
+    const vanillaTiltElement = vanillaTiltRef.current // the DOM node
+    VanillaTilt.init(vanillaTiltElement, vanillaTiltInitialOptions)
 
     // In our case, we will not ever change the options in the life of our app.
     //  The options just control the way the library changes the graphic as the cursor
@@ -74,15 +76,9 @@ function Tilt({children}) {
     //  would probably be instead stored in a useState variable.
 
     const cleanup = () => {
-      VanillaTilt.destroy(vanillaTiltRef.current)
-      // - this code (from *this* render is always run before the *next*
-      //  useEffect (from the *next* render) is run)
-      // see Vanilla-Tilt docs for info on what it needs (https://www.npmjs.com/package/vanilla-tilt)
-
-      // Destroy instance
-      // Delete the "old" React reference, the old library connection to the DOM
-      // (and if it is a re-render, the new instance of useEffect will create a new
-      // reference and re-link it to the library -- see code above)
+      // removes the listener before React removes the DOM node
+      // (vanillaTiltElement IS the DOM node)
+      vanillaTiltElement.VanillaTilt.destroy()
     }
 
     return cleanup
@@ -96,10 +92,31 @@ function Tilt({children}) {
             VanillaTilt.destroy(vanillaTiltRef.current)
             ...
           }
-        In ONLY do it this way here to EMPHASIZE and get it STUCK in my HEAD
-          that this is always what the return value of useEffect does.
+        I ONLY do it this way here to EMPHASIZE and get it STUCK in my HEAD
+          that cleanup/destruction is what the return value of useEffect is for.
+      ----
+        REM:
+        this cleanup code (from *this* render is always run just before the
+          useEffect code (from the *next* render) is run)
+        In our case, we set useEffect to only run when the component is mounted,
+          and then again when it is dismounted, but never on re-render (empty
+          dependency array)
+        So the only thing we need it to do, is delete the eventHandlers when the
+            component dismounts.
+            Vanilla-Tilt docs (https://www.npmjs.com/package/vanilla-tilt)
+            indicate that element.VanillaTilt.destroy() does this.
+
+         Destroy instance
+         Delete the "old" React reference, the old library connection to the DOM
+         (and if it is a re-render, the new instance of useEffect will create a new
+         reference and re-link it to the library -- see code above)
     */
   })
+
+  /* consider adding the following PR
+  // 🐨 add a `React.useEffect` callback here and use VanillaTilt to make your
+  // div look fancy. See: Vanilla Tilt [usage examples](https://micku7zu.github.io/vanilla-tilt.js/)
+  */
 
   // 🐨 add a `React.useEffect` callback here and use VanillaTilt to make your
   // div look fancy.
@@ -126,6 +143,8 @@ function Tilt({children}) {
       <div className="tilt-child">{children}</div>
     </div>
   )
+  //  SH Note: children/inner elements to the Ref'd "root" vanilla tilt element
+  //  are used in the perspective warp option, giving that 3D effect.
 }
 
 function App() {
@@ -135,6 +154,8 @@ function App() {
     </Tilt>
   )
 }
+
+export default App
 
 /* SH NOTES:
   Styles for this app (this file) are defined in the file ../styles.css
@@ -261,6 +282,4 @@ function App() {
         element) are used for the parallax effect option, and is acheived by
         through the `transform` and `transform-style` settings.
 
-  */
-
-export default App
+*/
