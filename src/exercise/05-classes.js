@@ -22,7 +22,9 @@ function Tilt({children}) {
     VanillaTilt.init(tiltNode, vanillaTiltOptions)
 
     return () => tiltNode.vanillaTilt.destroy()
-  }, []) // purposely empty dependancy array
+  }, []) // eslint-disable-line -- // purposely empty dependancy array.
+  // More accurately: creating a dependancy array, then purposely deleting tiltRef from it.
+  // do not disable eslint like this in a real app!
 
   return (
     <div ref={tiltRef} className="tilt-root">

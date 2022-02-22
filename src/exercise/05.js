@@ -16,6 +16,14 @@ import * as React from 'react'
 // eslint-disable-next-line no-unused-vars
 import VanillaTilt from 'vanilla-tilt'
 
+/* ****** NOTE: Many Comments may be inacurate.
+                TODO: CLEAN-UP
+                ... or just continue on with the course, now that this file's
+                purpose has been served. And the purpose of the comments were
+                working through to a understanding of how everything here works.
+  *********
+*/
+
 function Tilt({children}) {
   // 🐨 create a ref here with React.useRef()
 
