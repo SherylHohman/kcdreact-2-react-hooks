@@ -41,6 +41,20 @@ function Tilt({children}) {
   //  BUT I would *not* suggest doing that! JIC
 
   const vanillaTiltRef = React.useRef()
+  // NOTE: we are initializing the ref with 'undefined': notice we are not
+  //        passing in any value.
+  //       While we created a VARIABLE that represents a REF Object,
+  //        its (custom? properties/property values ?) have not yet been set.
+  //        Specifically, theRef.current is === `undefined`
+  //
+  //        Once we RENDER the element (rem: we pass it in as a `ref` prop)
+  //        the React element is *created* and assigned.
+  //        THEN React re-renders, and has a value assigned.
+  //        So then, inside useEffect, its `current` *does* have a value
+  //       ...
+  //       However... React *is* able to get a `current` value by the time our
+  //        useEffect runs! (kind of by definition!!)
+
   console.log('vanillaTiltRef:')
   if (vanillaTiltRef) {
     console.dir(vanillaTiltRef)
@@ -83,6 +97,10 @@ function Tilt({children}) {
     // const element = document.querySelector(".js-tilt");
 
     // the DOM node is saved to vanillaTiltElement
+    //  By the time useEffect() runs, our Ref.current *does* have a value.
+    //    it is no longer `undefined` though if we `console.log` it in the line
+    //    after the variable was created, the `current` value of the ref *was*
+    //    `undefined`.
     const vanillaTiltElement = vanillaTiltRef.current // the DOM node
     //Usually an ELEMENTnode, but could also be a DOCUMENTnode,
     // if full-page-listening is set.
@@ -135,7 +153,61 @@ function Tilt({children}) {
         // (vanillaTiltElement IS the DOM node.
 
         // VanillaTilt.destroy(vanillaTiltElement)
-        vanillaTiltElement.VanillaTilt.destroy()
+        // vanillaTiltElement.VanillaTilt.destroy()
+        vanillaTiltElement.vanillaTilt.destroy()
+
+        // !!!! Woooaaaah!! Ahhhhaaaaaa!
+        //  it is NOT  VanillaTilt, it is vanillaTilt LOWER CASE
+        //  we are referencing a PROPERTY called `vanillaTilt` ON the element!
+        //  I Bet *that* is the source of the Error with hot-loading!
+        //  Hot Reloading (which does NOT actually reload the the page)
+        //  is the only time the CLEANUP function is called.
+        //  and element.VanillaTilt.destroy() does NOT exist.
+        //  element.vanillaTilt.destroy() DOES!
+        //  (This insight came from (finally) watching the solution video.)
+        //
+        //  Yep! that seems to work.
+        //  Had I simply copy-pasted his supplied code, rather than tyring to
+        //    figure it out myself, I would have never had this error.
+        //    and the error was simply misreading the docs. (AND the solution file !!!)
+        //    Couldn't see 'v' from 'V'  UGH !!!! Hours Wasted!!
+        //  Still better that I used the docs. The understanding gained was good.
+        //    I got *nothing* from just reading the solution, or the given code.
+        //    The exercise was useless otherwise, because I had no connection to
+        //    what the code was actually doing. No idea what it was replacing in
+        //    in terms of a vanilla JS vs React JS context.
+        //  BUT, I regret that I spent so much time trying to fix a "dumb", but
+        //    very difficult to see error.
+        //  As a side effect, I also improved the Vanilla Tilt docs, slightly
+        //    and got a PR request accepted.
+        //    But... UGH. And the PR will have NO + bearing to my future or reputation :-(
+        //    (that alone is fine, but it does NOT act as an offset to time wasted on this dumb bug)
+        //    Furthermore, the DAY I wasted on PR's for the Vanilla Tilt library
+        //      did not even help me see the error.
+        //      even reading Vanilla Tilt CODE (today), just for funsies, actually
+        //      reading the vanillaTilt.destroy METHOD did not help me to SEE this!!!
+        //      UGH. Oh Well.
+        //      I still learned. And I have now eventually watched (part of) the video.
+        //      Pay CLOSER ATTENTION, though.
+
+        /*
+            The destroy() is a METHOD added to an element during init.
+              VanillaTilt.init() is the only function call.
+              VanillaTilt is the library script.
+              vanillaTilt.destroy is a METHOD added to the INSTANCE
+                (notice the first letter is NOT capitalized)
+
+              This explains why init(element) -- the element is passed in.
+              VS the other methods do NOT take arguments, but are called ON the element:
+              element.vanillaTilt.destroy()		// vanillaTilt is a method ON element
+                                              //	(it was created/added via below:)
+              VanillaTilt.init(element)				// creates an instance of VanillaTilt
+                                              // script on the element
+                                              //  (or dom node or nodeList array)
+                                              // adds vanillaTilt.destroy,
+                                              //	vaniallaTilt.reset, and
+                                              //  vanillaTilt.?something else no remember?
+          */
 
         // REM in JS, it is: myDIV.removeEventListener("mousemove", myFunction);
         // https://www.w3schools.com/jsref/met_element_removeeventlistener.asp
@@ -212,6 +284,9 @@ function Tilt({children}) {
       <div className="tilt-child">{children}</div>
     </div>
   )
+  // REM: in React, JSX, *we* are NOT creating DOM nodes,
+  //  *we* are creating "UI descriptor objects" (per video solution)
+
   //  SH Note: children/inner elements to the Ref'd "root" vanilla tilt element
   //  are used in the perspective warp option, giving that 3D effect.
 }
