@@ -23,17 +23,49 @@ function Tilt({children}) {
   //  the node changes. (In a way, I said that inside out, or backwards.
   //  but depending on one's point view, it can make more sense to speak as though
   //  coming from that point of view from the DOM instead of from React)
+
+  // UPDATE:
+  // SO.. I *think* this component never "re-renders"
+  // I think in this case, the library directly controlls
+  //  this DOM node, and react does not touch it after initial render, unless it is to be removed.
+  //  The library manipulates the node, its events, and visuals
+  // So the Ref does not change.
+  // ...or even if React were to re-render it, the Ref used by the
+  //  library does not change, because we gave it an [] empty dependancy array!
+
+  // But because the Ref does not actually ever change, I *think*
+  //  I am not sure we actually *need* to give it an *[]* empty dependancy array.
+  //  Seems [vanillaTiltRef] would work just the same.
+  // It seems that *in this case, as is* even leaving the param off
+  //  would probalby work just the same, because the element never re-renders (?)
+  //  BUT I would *not* suggest doing that! JIC
+
   const vanillaTiltRef = React.useRef()
+  console.log('vanillaTiltRef:')
+  if (vanillaTiltRef) {
+    console.dir(vanillaTiltRef)
+  }
+  console.log('\n')
 
   React.useEffect(() => {
+    // empty dependancy array so it only gets called: once at mount
+    //  (plus once at dismount, though that does not happen in *this* version of the app)
+
     const vanillaTiltInitialOptions = {
       reverse: true,
       glare: true,
       'max-glare': 0.5,
-      //'full-page-listening': false, //prefer true, but start with false
-      // : 1.1, // 2 = 200%, 1.5 = 150%, etc.. //prefer larger, but start with default `1` (no zooming on hover)
-      //"mouse-event-element":  null,   // css-selector or link to HTML-element that will be listening to mouse events
+      reset: false, // default true; false = If the tilt effect has to be reset on exit
+      'full-page-listening': true, //prefer true, but start with false
+      // scale: 1.5, // 2 = 200%, 1.5 = 150%, etc.. //prefer larger, but start with default `1` (no zooming on hover)
     }
+
+    // const DoddsSuggestedOptions = {}
+    //     max: 25,
+    //     speed: 400,
+    //     glare: true,
+    //     'max-glare': 0.5,
+    // })
 
     /* at each render, the React Ref to the DOM node changes. So must update the
     //  library to reference the new REF, in order for React and the library to
@@ -52,7 +84,17 @@ function Tilt({children}) {
 
     // the DOM node is saved to vanillaTiltElement
     const vanillaTiltElement = vanillaTiltRef.current // the DOM node
+    //Usually an ELEMENTnode, but could also be a DOCUMENTnode,
+    // if full-page-listening is set.
+    // Hence "Element" is not necessarily technically correct. Node *is*).
+    // Also, it could be a NodeList (list of nodes), as per vanilla-tilt API
+
     VanillaTilt.init(vanillaTiltElement, vanillaTiltInitialOptions)
+    console.log('Initialized vanilla-tilt:')
+    if (VanillaTilt && vanillaTiltElement) {
+      console.dir(vanillaTiltElement)
+    }
+    console.log('\n')
 
     // In our case, we will not ever change the options in the life of our app.
     //  The options just control the way the library changes the graphic as the cursor
@@ -76,12 +118,37 @@ function Tilt({children}) {
     //  would probably be instead stored in a useState variable.
 
     const cleanup = () => {
-      // removes the listener before React removes the DOM node
-      // (vanillaTiltElement IS the DOM node)
-      vanillaTiltElement.VanillaTilt.destroy()
+      if (!VanillaTilt || !vanillaTiltElement) {
+        console.log('There is no vanilla-tilt element to destroy')
+        console.dir(vanillaTiltElement)
+        console.log('\n')
+        // somehow hot loading is causing an error, cleanup is called, but
+        //  there is no existing element. But if reload the page, all is well.
+        // ...
+        // HA! Somehow, I did *not* have an [] empty dependancy array.
+        //  THAT is what caused this error!
+      } else {
+        console.log('Destroying...:')
+        console.dir(vanillaTiltElement)
+        console.log('\n')
+        // removes the listener before React removes the DOM node
+        // (vanillaTiltElement IS the DOM node.
+
+        // VanillaTilt.destroy(vanillaTiltElement)
+        vanillaTiltElement.VanillaTilt.destroy()
+
+        // REM in JS, it is: myDIV.removeEventListener("mousemove", myFunction);
+        // https://www.w3schools.com/jsref/met_element_removeeventlistener.asp
+        // in vanilla-tilt repo, this function indirectly calls, eg:
+        //  this.elementListener.removeEventListener("mousemove", this.onMouseMoveBind);
+        // (as well as a bunch of other stuff)
+      }
     }
 
     return cleanup
+    // return () => vanillaTiltElement.VanillaTilt.destroy()
+    // return () => tiltNode.vanillaTilt.destroy()
+
     // any return value is used as the cleanup function
     /* Normally would not create separate cleanup function, but instead write it
         inline like so:
@@ -111,7 +178,9 @@ function Tilt({children}) {
          (and if it is a re-render, the new instance of useEffect will create a new
          reference and re-link it to the library -- see code above)
     */
-  })
+    // })
+    // }, [vanillaTiltRef])
+  }, [])
 
   /* consider adding the following PR
   // 🐨 add a `React.useEffect` callback here and use VanillaTilt to make your
