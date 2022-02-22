@@ -55,6 +55,27 @@ function Tilt({children}) {
   //       However... React *is* able to get a `current` value by the time our
   //        useEffect runs! (kind of by definition!!)
 
+  //  NOTE: useRef
+  //    Is used when we do NOT want to trigger a REACT RE-RENDER
+  //      (If we *do* want to trigger a re-render, use useState instead)
+  //    More info:
+  //      useRef.current changes on re-render
+  //      useRef itself does not. It is created when the component is mounted
+  //        but the ref Object reference does NOT change.
+  //        it IS MUTATED, though. its CURRENT PROPERTY DOES change during re-render
+  //        The current property is always updated to point to the current render
+  //        (while the cleanup function holds a pointer to the previous render
+  //          which is of course run before the next useEffect is run, and is
+  //          yada, yada, destruction... yada.)
+  //      useRef hook is used for more than just DOM nodes.
+  //        (again, see first line of this note)
+  //        useRef creates an object... and its `current` property is MUTABLE.
+  //        Anytime you want to maintain a reference to something
+  //        And anytime you want to make changes to that thing
+  //        ...without triggering a re-render.
+  //          (see video 5:20 timestamp on https://epicreact.dev/modules/react-hooks/useref-and-useeffect-dom-interaction-solution)
+  //
+
   console.log('vanillaTiltRef:')
   if (vanillaTiltRef) {
     console.dir(vanillaTiltRef)
