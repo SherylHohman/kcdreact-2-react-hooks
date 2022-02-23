@@ -11,6 +11,7 @@ import {
 
 function PokemonInfo({pokemonName}) {
   const [pokemon, setPokemon] = React.useState(null)
+  const [fetchError, setFetchError] = React.useState(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -19,20 +20,42 @@ function PokemonInfo({pokemonName}) {
     }
 
     setPokemon(null)
+    setFetchError(null)
 
     fetchPokemon(pokemonName)
-      .then(pokemonData => {
-        setPokemon(pokemonData)
+      .then(pokemon => {
+        setPokemon(pokemon)
       })
       .catch(error => {
-        console.log('error fetching: ', error)
+        // Note: catch will catch any errors from within the .then() block above.
+        //	In this case, setPokemon (useState hook) would not have an error,
+        //	but if it did, it would *also* be caught in this catch block
+        //  (see instructions, end of file)
+        // 	in that case "fetchError" would be a misnomer!
+        // However: if, instead of chaining, I used the
+        //		.then(success=>{<setPokemon>}, fail=>{<setError>})
+        //	type syntax, then setFetchError/fetchError would NOT be a misnomre
+        //	as only errors from the fetchPokemon function would be caught *in that function*
+        //	(would have to use the success function to catch errors from inside its function)
+        // See solution file, or Instructions below to see *that* syntax.
+
+        setFetchError(error)
       })
 
     return console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
 
   // render the pokemon card
+  if (fetchError !== null)
+    return (
+      <div role="alert">
+        There was an error:{' '}
+        <pre style={{whiteSpace: 'normal'}}>{fetchError.message}</pre>
+      </div>
+    )
+
   if (!pokemonName) return 'Submit a pokeman'
+  // loading state
   if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
   return <PokemonDataView pokemon={pokemon} />
 }
@@ -57,7 +80,7 @@ function App() {
 
 export default App
 
-/*	06.extra-1 instructions
+/*	06.extra-1 (handle fetch errors) instructions:
 
 Unfortunately, sometimes things go wrong and we need to handle errors when they
 	do so we can show the user useful information.
