@@ -26,28 +26,24 @@ function PokemonInfo({pokemonName}) {
     //     pokemonData => {/* update all the state here */},
     //   )
 
-    function fetchPokemanWrapper() {
-      if (!pokemonName) {
-        console.log('exit early')
-        return // do not fetch, return early
-      }
-      fetchPokemon(pokemonName)
-        .then(pokemonData => {
-          setPokemon(pokemonData)
-        })
-        .catch(error => {
-          console.log('error fetching: ', error)
-        })
+    if (!pokemonName) {
+      console.log('exit early')
+      return console.log('useEffect cleanup, after early return') // no cleanup necessary
     }
 
     // See SH NOTES RE: Why set pokemon null before fetch, at end of file
     // TODO: 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
-    // SH: Better to call here, or inside the wrapper function?
     setPokemon(null)
 
+    // The fetchPokemon is the only level of wrapping we need if using Promises instead of asynch/await
     //  SH See Notes RE: Wrapper at end of file
-    //  Their solution does not use a wrapper. Why?
-    fetchPokemanWrapper()
+    fetchPokemon(pokemonName)
+      .then(pokemonData => {
+        setPokemon(pokemonData)
+      })
+      .catch(error => {
+        console.log('error fetching: ', error)
+      })
 
     return console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
@@ -86,6 +82,29 @@ export default App
 /*  SH Notes:
 
     RE: Wrapper
+
+      Update:
+      I guess wrapper is not necessary.
+      I guess the fetchPokemon() call *IS* the wrapped function?
+      It is the only level of wrapping that we need?
+      Only need an additional layer of wrapping if using asynch await.
+
+          React.useEffect(() => {
+            async function effect() {
+              const result = await doSomeAsyncThing()
+              // do something with the result
+            }
+            effect()
+          })
+
+      For Promises, this works:
+
+          React.useEffect(() => {
+            doSomeAsyncThing().then(result => {
+              // do something with the result
+            })
+          })
+
 		  Their solution does not use a wrapper. Why?
       I am using a wrapper because the return value for useEffect is supposed
       to be the cleanup function.
