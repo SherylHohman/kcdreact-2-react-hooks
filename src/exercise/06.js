@@ -28,7 +28,7 @@ function PokemonInfo({pokemonName}) {
 
     if (!pokemonName) {
       console.log('exit early')
-      return console.log('useEffect cleanup, after early return') // no cleanup necessary
+      return () => console.log('useEffect cleanup, after early return') // no cleanup necessary
     }
 
     // See SH NOTES RE: Why set pokemon null before fetch, at end of file
@@ -45,7 +45,7 @@ function PokemonInfo({pokemonName}) {
         console.log('error fetching: ', error)
       })
 
-    return console.log('useEffect cleanup') // no cleanup necessary
+    return () => console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
 
   // 🐨 return the following things based on the `pokemon` state and `pokemonName` prop:

@@ -16,7 +16,7 @@ function PokemonInfo({pokemonName}) {
   React.useEffect(() => {
     if (!pokemonName) {
       console.log('exit early')
-      return console.log('useEffect cleanup, after early return') // no cleanup necessary
+      return () => console.log('useEffect cleanup, after early return') // no cleanup necessary
     }
 
     setPokemon(null)
@@ -42,7 +42,7 @@ function PokemonInfo({pokemonName}) {
         setFetchError(error)
       })
 
-    return console.log('useEffect cleanup') // no cleanup necessary
+    return () => console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
 
   // render the pokemon card
