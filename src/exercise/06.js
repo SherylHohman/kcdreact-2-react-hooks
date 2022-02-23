@@ -2,11 +2,11 @@
 // http://localhost:3000/isolated/exercise/06.js
 
 import * as React from 'react'
-// 🐨 you'll want the following additional things from '../pokemon':
+import {PokemonForm} from '../pokemon'
+// 🐨 you'll want the following additional things from the'../pokemon' file:
 // fetchPokemon: the function we call to get the pokemon info
 // PokemonInfoFallback: the thing we show while we're loading the pokemon info
 // PokemonDataView: the stuff we use to display the pokemon info
-import {PokemonForm} from '../pokemon'
 import {fetchPokemon, PokemonDataView, PokemonInfoFallback} from '../pokemon'
 
 function PokemonInfo({pokemonName}) {
@@ -29,11 +29,23 @@ function PokemonInfo({pokemonName}) {
       if (!pokemonName) {
         return // do not fetch, return early
       }
-      fetchPokemon(pokemonName).then(pokemonData => {
-        /* update all the state here */
-        setPokemon(pokemonData)
-      })
-      // TODO: add catch for the case where the request fails
+      // Setting poke,om to null clears previous result and
+      //  re-renders image to show loading screen until response is received.
+      //  If fetch is successful, setState updates and re-renders with new info.
+      //  If fetch fails, well, the loading screen remains
+      setPokemon(null)
+
+      fetchPokemon(pokemonName)
+        .then(pokemonData => {
+          setPokemon(pokemonData)
+        })
+        .catch(error => {
+          console.log('error fetching: ', error)
+          // setPokemon(error.message)
+          // ideally, the error message would show, but our current UI options
+          //  do not have provisions for this.
+          //  Instead, the loading screen remains.
+        })
     }
     // TODO: 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
     // 💰 Use the `fetchPokemon` function to fetch a pokemon by its name:
@@ -42,12 +54,6 @@ function PokemonInfo({pokemonName}) {
     //     pokemonData => {/* update all the state here */},
     //   )
 
-    // why? In case of fetch error?
-    setPokemon(null)
-    // It does not seem right to use the setState hook here.
-    // Do I just set it directly here?
-    // Well, maybe setState *is* correct? Resets to loading or unknown value
-    //  until the http request responds? Ponder over it.
     fetchPokemanWrapper()
 
     return // no cleanup necessary
@@ -58,14 +64,39 @@ function PokemonInfo({pokemonName}) {
   //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
 
-  // 💣 remove this
-  const output = function () {
-    if (!pokemonName) return 'Submit a pokeman'
-    if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
-    return <PokemonDataView pokemon={pokemon} />
-  }
+  // version 1:
+  // const output = function () {
+  //   if (!pokemonName) return 'Submit a pokeman'
+  //   if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
+  //   return <PokemonDataView pokemon={pokemon} />
+  // }
 
-  return <div>{output()}</div>
+  //  return <div>{output()}</div>
+
+  // version2:
+  /* return (
+    <div>
+      {!pokemonName ? (
+        'Submit a pokeman'
+      ) : !pokemon ? (
+        <PokemonInfoFallback name={pokemonName} />
+      ) : (
+        <PokemonDataView pokemon={pokemon} />
+      )}
+    </div>
+  ) */
+
+  // version3:
+  return (
+    <div>
+      {(!pokemonName && 'Submit a pokeman') ||
+        (pokemon ? (
+          <PokemonDataView pokemon={pokemon} />
+        ) : (
+          <PokemonInfoFallback name={pokemonName} />
+        ))}
+    </div>
+  )
 }
 
 function App() {
