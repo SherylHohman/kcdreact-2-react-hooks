@@ -3,6 +3,7 @@
 
 import * as React from 'react'
 import {PokemonForm} from '../pokemon'
+
 // 🐨 you'll want the following additional things from the'../pokemon' file:
 // fetchPokemon: the function we call to get the pokemon info
 // PokemonInfoFallback: the thing we show while we're loading the pokemon info
@@ -25,55 +26,30 @@ function PokemonInfo({pokemonName}) {
     //     pokemonData => {/* update all the state here */},
     //   )
 
-    const fetchPokemanWrapper = function () {
+    function fetchPokemanWrapper() {
       if (!pokemonName) {
+        console.log('exit early')
         return // do not fetch, return early
       }
-      // Setting pokemon to null clears previous result and
-      //  re-renders image to show loading screen until response is received.
-      //  If fetch fails, well, the loading screen remains
-      //  If fetch is successful, setState updates and re-renders with new pokemon.
-      setPokemon(null)
-
       fetchPokemon(pokemonName)
         .then(pokemonData => {
           setPokemon(pokemonData)
         })
         .catch(error => {
           console.log('error fetching: ', error)
-          // setPokemon(error.message)
-          // ideally, the error message would show, but our current UI options
-          //  do not have provisions for this.
-          //  Instead, the loading screen remains.
         })
     }
 
-    // I am using a wrapper because the return value for useEffect is supposed
-    //  to be the cleanup function.
-    // Solution did NOT use a wrapper, and also did not use a catch
-    // :-((  Did I do unnecessary work. Make it too complicated?
-
-    //  If not wrapped, this is what *I* think would happen:
-    //  1) the early return sets an empty cleanup function.
-    //    while this is what we want in this case, it is being accidentally set
-    //    to that value for the wrong reasons. A code change could produce errors.
-    //    The code is misleading.
-    //  2) Hmm. Doesn't a promise always have a return value?
-    //    I might be wrong on this, or misunderstand. But is not an implicit
-    //    `.then()` part of this? I need to re-read promises and asynch/await
-    //    to be sure. Anyway, if so, then that is also being set as a returned
-    //    cleanup value in the case of a successful fetch.
-    //    Maybe it is only asynch/await that causes this type of issue?
-    //    Or perhaps I misunderstand altogether, and there is no issue at all.
-
-    fetchPokemanWrapper()
+    // See SH NOTES RE: Why set pokemon null before fetch, at end of file
     // TODO: 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
-    // 💰 Use the `fetchPokemon` function to fetch a pokemon by its name:
-    // fetchPokemon(pokemonName)
-    // .then
-    //     pokemonData => {/* update all the state here */},
-    //   )
-    return // no cleanup necessary
+    // SH: Better to call here, or inside the wrapper function?
+    setPokemon(null)
+
+    //  SH See Notes RE: Wrapper at end of file
+    //  Their solution does not use a wrapper. Why?
+    fetchPokemanWrapper()
+
+    return console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
 
   // 🐨 return the following things based on the `pokemon` state and `pokemonName` prop:
@@ -81,42 +57,7 @@ function PokemonInfo({pokemonName}) {
   //   2. pokemonName but no pokemon: <PokemonInfoFallback name={pokemonName} />
   //   3. pokemon: <PokemonDataView pokemon={pokemon} />
 
-  // version 1:
-  // const output = function () {
-  //   if (!pokemonName) return 'Submit a pokeman'
-  //   if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
-  //   return <PokemonDataView pokemon={pokemon} />
-  // }
-
-  //  return <div>{output()}</div>
-
-  // version2:
-  /* return (
-    <div>
-      {!pokemonName ? (
-        'Submit a pokeman'
-      ) : !pokemon ? (
-        <PokemonInfoFallback name={pokemonName} />
-      ) : (
-        <PokemonDataView pokemon={pokemon} />
-      )}
-    </div>
-  ) */
-
-  // version3:
-  /* return (
-    <div>
-      {(!pokemonName && 'Submit a pokeman') ||
-        (pokemon ? (
-          <PokemonDataView pokemon={pokemon} />
-        ) : (
-          <PokemonInfoFallback name={pokemonName} />
-        ))}
-    </div>
-  )
- */
-
-  // version 4: (dummy, this is version 1, but no separate function needed!! duh!)
+  // render the pokemon card
   if (!pokemonName) return 'Submit a pokeman'
   if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
   return <PokemonDataView pokemon={pokemon} />
@@ -141,3 +82,33 @@ function App() {
 }
 
 export default App
+
+/*  SH Notes:
+
+    RE: Wrapper
+		  Their solution does not use a wrapper. Why?
+      I am using a wrapper because the return value for useEffect is supposed
+      to be the cleanup function.
+      Solution did NOT use a wrapper, and also did not use a catch
+      :-((  Did I do unnecessary work. Make it too complicated?
+
+      If not wrapped, this is what *I* think would happen:
+      1) the early return sets an empty cleanup function.
+        while this is what we want in this case, it is being accidentally set
+        to that value for the wrong reasons. A code change could produce errors.
+        The code is misleading.
+      2) Hmm. Doesn't a promise always have a return value?
+        I might be wrong on this, or misunderstand. But is not an implicit
+        `.then()` part of this? I need to re-read promises and asynch/await
+        to be sure. Anyway, if so, then that is also being set as a returned
+        cleanup value in the case of a successful fetch.
+        Maybe it is only asynch/await that causes this type of issue?
+        Or perhaps I misunderstand altogether, and there is no issue at all.
+
+    RE: Why set pokemon null before fetch
+      SH: Setting pokemon to null clears previous result and
+      re-renders image to show loading screen until response is received.
+      If fetch fails, well, the loading screen remains
+      If fetch is successful, setState updates and re-renders with new pokemon.
+
+    */
