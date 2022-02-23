@@ -10,43 +10,61 @@ import {
   PokemonInfoFallback,
 } from '../pokemon'
 
+// fetch states (prefer CONST over strings for catching typos)
+//  even better would be to put these in a object, but that is not this lesson.
+const IDLE = 'idle'
+const PENDING = 'pending'
+const RESOLVED = 'resolved'
+const REJECTED = 'rejected'
+
 function PokemonInfo({pokemonName}) {
   const [pokemon, setPokemon] = React.useState(null)
   const [fetchError, setFetchError] = React.useState(null)
+  const [status, setStatus] = React.useState(IDLE)
 
   React.useEffect(() => {
     if (!pokemonName) {
-      return // no cleanup necessary
+      // setStatus(IDLE)
+      return () => console.log('clean up after empty-string') // no cleanup necessary
     }
 
     setPokemon(null)
     setFetchError(null)
+    setStatus(PENDING)
+    console.log('setStatus:', PENDING)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
         setPokemon(pokemon)
+        setStatus(RESOLVED)
+        console.log('setStatus:', RESOLVED)
       })
       .catch(error => {
         setFetchError(error)
+        setStatus(REJECTED)
+        console.log('setStatus:', REJECTED)
       })
 
-    return // no cleanup necessary
+    return () => console.log('clean up') // no cleanup necessary
   }, [pokemonName])
 
   // render the pokemon card
-  if (fetchError !== null)
+  if (status === REJECTED) {
     return (
       <div role="alert">
         There was an error:{' '}
         <pre style={{whiteSpace: 'normal'}}>{fetchError.message}</pre>
       </div>
     )
+  }
 
-  if (!pokemonName) return 'Submit a pokeman'
+  if (status === IDLE) return 'Submit a pokeman'
   // loading state
-  if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
+  if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
   // show pokemon
-  return <PokemonDataView pokemon={pokemon} />
+  if (status === RESOLVED) return <PokemonDataView pokemon={pokemon} />
+  /// Whaaa?
+  return <div>Unknown Status: {status}</div>
 }
 
 function App() {
