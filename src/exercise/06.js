@@ -29,10 +29,10 @@ function PokemonInfo({pokemonName}) {
       if (!pokemonName) {
         return // do not fetch, return early
       }
-      // Setting poke,om to null clears previous result and
+      // Setting pokemon to null clears previous result and
       //  re-renders image to show loading screen until response is received.
-      //  If fetch is successful, setState updates and re-renders with new info.
       //  If fetch fails, well, the loading screen remains
+      //  If fetch is successful, setState updates and re-renders with new pokemon.
       setPokemon(null)
 
       fetchPokemon(pokemonName)
@@ -47,15 +47,32 @@ function PokemonInfo({pokemonName}) {
           //  Instead, the loading screen remains.
         })
     }
+
+    // I am using a wrapper because the return value for useEffect is supposed
+    //  to be the cleanup function.
+    // Solution did NOT use a wrapper, and also did not use a catch
+    // :-((  Did I do unnecessary work. Make it too complicated?
+
+    //  If not wrapped, this is what *I* think would happen:
+    //  1) the early return sets an empty cleanup function.
+    //    while this is what we want in this case, it is being accidentally set
+    //    to that value for the wrong reasons. A code change could produce errors.
+    //    The code is misleading.
+    //  2) Hmm. Doesn't a promise always have a return value?
+    //    I might be wrong on this, or misunderstand. But is not an implicit
+    //    `.then()` part of this? I need to re-read promises and asynch/await
+    //    to be sure. Anyway, if so, then that is also being set as a returned
+    //    cleanup value in the case of a successful fetch.
+    //    Maybe it is only asynch/await that causes this type of issue?
+    //    Or perhaps I misunderstand altogether, and there is no issue at all.
+
+    fetchPokemanWrapper()
     // TODO: 🐨 before calling `fetchPokemon`, clear the current pokemon state by setting it to null
     // 💰 Use the `fetchPokemon` function to fetch a pokemon by its name:
     // fetchPokemon(pokemonName)
     // .then
     //     pokemonData => {/* update all the state here */},
     //   )
-
-    fetchPokemanWrapper()
-
     return // no cleanup necessary
   }, [pokemonName])
 
@@ -87,7 +104,7 @@ function PokemonInfo({pokemonName}) {
   ) */
 
   // version3:
-  return (
+  /* return (
     <div>
       {(!pokemonName && 'Submit a pokeman') ||
         (pokemon ? (
@@ -97,6 +114,12 @@ function PokemonInfo({pokemonName}) {
         ))}
     </div>
   )
+ */
+
+  // version 4: (dummy, this is version 1, but no separate function needed!! duh!)
+  if (!pokemonName) return 'Submit a pokeman'
+  if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
+  return <PokemonDataView pokemon={pokemon} />
 }
 
 function App() {
