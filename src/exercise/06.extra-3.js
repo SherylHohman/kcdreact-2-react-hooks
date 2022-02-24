@@ -29,7 +29,7 @@ function PokemonInfo({pokemonName}) {
 
   React.useEffect(() => {
     if (!pokemonName) {
-      return //() => console.log('clean up after empty-string') // no cleanup necessary
+      return () => console.log('1. clean up after empty-string') // no cleanup necessary
     }
 
     // v1: previous exercise 06.extra-2
@@ -48,7 +48,8 @@ function PokemonInfo({pokemonName}) {
     // Our code will not try to access them with this status.
     // And in any case, In our code null and undefined have same result
 
-    // console.log('setPokemonStatus:', state, PENDING)
+    // because setState is asynch, this log prints before the state values are updated
+    console.log('2. ', PENDING, '   (   updating from old state:', state)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
@@ -81,9 +82,28 @@ function PokemonInfo({pokemonName}) {
         //  In this version, it no longer exists on our state object
         //  ...so by def, it is "undefined".
         //	But, the app never uses `error` property during a render when status is RESOLVED!
+
+        // prettier-ignore
+        // because setState is asynch, this log prints before the state values are updated
+        console.log( '4. ', RESOLVED, '   (   updating from old state:', state, '\n',)
         setState({pokemon, status: RESOLVED}) // error property no longer exists
 
-        // console.log('setPokemonStatus:', state, RESOLVED)
+        // because setState is asynch, this log prints before the state values are updated
+        // prettier-ignore
+        console.log( '     4b. ', RESOLVED, '   ((logs out of order!!)   updating from old state:', state, '\n',)
+        // WEIRD! This line gets written to the console AFTER the next render
+        //	..prints the UPDATED state to the screen,
+        //	BUT THIS LINE CONSOLE.LOGS THE OLD STALE STATE VALUES (as expected)
+        //  ..BUT AFTER another console.log shows the NEW CURRENT values!!
+
+        //  Now I see it is because ORDER MATTERS here.
+        //	I added a console.log BEFORE I call setState and it prints before the
+        //		re-render. This one got put in the cue before state updated (as expected)
+        //	  Yet, state gets updated and the re-render happens
+        //		(including the console log within the re-render -- which necessarily
+        //		 HAS the UPDATED state values)
+        //		BEFORE the (stale) log gets printed to the screen.
+        //	Facinating!
       })
       .catch(error => {
         // v1: previous exercise 06.extra-2
@@ -103,6 +123,10 @@ function PokemonInfo({pokemonName}) {
         // setPokemonStatus(prev => ({...prev, status: REJECTED}))
         // setFetchError(error)
 
+        // because setState is asynch, this log prints before the state values are updated
+        // prettier-ignore
+        console.log( '4. ', REJECTED, '   (   updating from old state:', state, '\n',)
+
         // v4: remove properties that are unused (and ==="null") by component when has this status
         //  In v3, v2, v1: we kept the `pokemon` property at "null";
         //  In this version, it no longer exists on our state object
@@ -110,11 +134,32 @@ function PokemonInfo({pokemonName}) {
         //	But, the app never uses `pokemon` property during a render when status is REJECTED!
         setState({error, status: REJECTED}) // pokeman property no longer exists
 
-        // console.log('setPokemonStatus:', state, REJECTED)
+        // because setState is asynch, this log prints before the state values are updated
+        // prettier-ignore
+        console.log('     4b. ', REJECTED, '   ((logs out of order!!)   updating from old state:', state, '\n', )
+        // WEIRD! This line gets written to the console AFTER the next render
+        //	..prints the UPDATED state to the screen,
+        //	BUT THIS LINE CONSOLE.LOGS THE OLD STALE STATE VALUES (as expected)
+        //  ..BUT AFTER another console.log shows the NEW CURRENT values!!
+        //  Now I see it is because ORDER MATTERS here.
+        //	I added a console.log BEFORE I call setState and it prints before the
+        //		re-render. This one got put in the cue before state updated (as expected)
+        //	  Yet, state gets updated and the re-render happens
+        //		(including the console log within the re-render -- which necessarily
+        //		 HAS the UPDATED state values)
+        //		BEFORE the (stale) log gets printed to the screen.
+        //	Facinating!
       })
+    console.log('3. ...exiting useEffect')
+    return () => console.log('1. clean up') // no cleanup necessary
+  }, [pokemonName]) // do not included `state`! Endless re-renders
+  // It is ONLY b/c of console.logs that `state` is even in this function!
 
-    return //() => console.log('clean up') // no cleanup necessary
-  }, [pokemonName]) // do not included pokemonStatus! Endless re-renders
+  // RENDER
+
+  // NOW, state has been updated, display values. They were inaccurate when logged
+  //		immediately after calling setState!! (see my useEffect function)
+  console.log('RENDERING state:', state)
 
   const {status, pokemon, error} = state
   if (status === REJECTED) {
@@ -252,6 +297,34 @@ However, in this situation, it doesn’t really make much of a difference.
 
 /*  SH Notes:
 
+			06.extra-3 COMMENTS and setState order within useEffet
+				(from commit message)
+
+				add tons of comments and console.logs
+				updated minor bugs RE: logging and implications of where logs were.
+
+				special attention paid to RE: ordering of useState and console.log output
+				This has implications much beyond console.logs.
+				TLDR; order matters inside asynch func.
+				TBF, I should not be printing out a variable that is not included as
+					a dependancy. It should only be printed OUTSIDE the useEffect function.
+					(If I added it to the dependacy list, though, it would infinite-loop)
+
+				This is a lesson as to why the dependacy array is so important!
+
+				It also provides an interesting illustration of:
+				1) setState being both asynch, but also gauranteed for useEffect
+				2) Lifecycle order
+				3) closures inside useEffect, combined with Lifecycle order
+				5) the JS event loop, perhaps
+				4) Order matters inside asynch functions. // maybe that is not in play here.
+						// my comments suggest it is, but I may have been mistaken. I now think
+						// those other factors may account for everything.
+
+				Remember, I am keeping comments and console.logs because this file is
+					a teaching document, and a record of my learning process.
+
+
 		RE: 3. state in object
 
 			06.extra-3 refactor: remove "null" state from obj
@@ -323,7 +396,8 @@ However, in this situation, it doesn’t really make much of a difference.
             })
           })
 
-		  Their solution does not use a wrapper. Why?
+		  PREVIOUS: NOTE, I was WRONG below! (Explanation in instructions was slightly confusing to me! Dunno if it caused the same misunderstanding to others, or just to me!)
+					Their solution does not use a wrapper. Why?
       I am using a wrapper because the return value for useEffect is supposed
       to be the cleanup function.
       Solution did NOT use a wrapper, and also did not use a catch
