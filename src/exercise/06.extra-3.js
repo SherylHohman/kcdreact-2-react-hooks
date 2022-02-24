@@ -17,37 +17,60 @@ const RESOLVED = 'resolved'
 const REJECTED = 'rejected'
 
 function PokemonInfo({pokemonName}) {
-  const [pokemon, setPokemon] = React.useState(null)
-  const [fetchError, setFetchError] = React.useState(null)
+  /*   const [pokemon, setPokemon] = React.useState(null)
   const [status, setStatus] = React.useState(IDLE)
+ */
+  const [pokemonStatus, setPokemonStatus] = React.useState({
+    status: IDLE,
+    pokemon: null,
+  })
+  const [fetchError, setFetchError] = React.useState(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
       // setStatus(IDLE)
-      return //() => console.log('clean up after empty-string') // no cleanup necessary
+      return () => console.log('clean up after empty-string') // no cleanup necessary
     }
 
-    setPokemon(null)
-    setFetchError(null)
-    setStatus(PENDING)
-    console.log('setStatus:', PENDING)
+    /* setFetchError(null)
+    setStatus(PENDING) */
+    setPokemonStatus({pokemon: null, status: PENDING})
+    console.log('setPokemonStatus:', pokemonStatus, PENDING)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
+        /*
         // has to be in this order, else an error occurs! pokemon before status
+        // setState calls cannot be gauranteed to be batched together when within
+        //  asynch callbacks! Hence the error.
+        //  So one solution is to put them on the *same* state variable.
+        //  (in an object). Then only a single call is required and it is
+        //	gauranteed to be updated at the same time.
+        //  Remember, the issue was that during re-render, RESOLVED was updated
+        //	so render tried tried to display the pokemon, which was still null
+        //	(based on status telling React which JSX to display)
+        //	pokemon would not be updated until the immediately next rerender.
+
         setPokemon(pokemon)
         setStatus(RESOLVED)
-        console.log('setStatus:', RESOLVED)
+				*/
+        setPokemonStatus({pokemon: pokemon, status: RESOLVED})
+        console.log('setPokemonStatus:', pokemonStatus, RESOLVED)
       })
       .catch(error => {
+        /*setStatus(REJECTED) */
         setFetchError(error)
-        setStatus(REJECTED)
-        console.log('setStatus:', REJECTED)
+        // setPokemonStatus(prev => ({...prev, status: REJECTED}))
+        // or can do like below, but in general it looks prone to introducing
+        // errors if app grows and changes: do not "change" anything that does not need to
+        setPokemonStatus({pokemon: null, status: REJECTED})
+        console.log('setPokemonStatus:', pokemonStatus, REJECTED)
       })
 
-    return //() => console.log('clean up') // no cleanup necessary
-  }, [pokemonName])
+    return () => console.log('clean up') // no cleanup necessary
+  }, [pokemonName]) // do not inclued pokemonStatus! Endless re-renders
 
+  const {status, pokemon} = pokemonStatus
   if (status === REJECTED) {
     return (
       <div role="alert">
