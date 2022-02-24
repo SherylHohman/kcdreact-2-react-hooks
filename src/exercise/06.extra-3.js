@@ -29,14 +29,19 @@ function PokemonInfo({pokemonName}) {
 
   React.useEffect(() => {
     if (!pokemonName) {
-      return () => console.log('clean up after empty-string') // no cleanup necessary
+      return //() => console.log('clean up after empty-string') // no cleanup necessary
     }
 
     /* setFetchError(null)
        setStatus(PENDING) */
     // setState({status: PENDING, pokemon: null, error: null})
-    setState({status: PENDING, pokemon: null, error: null})
-    console.log('setPokemonStatus:', state, PENDING)
+    // setState({status: PENDING, pokemon: null, error: null})
+
+    setState({status: PENDING}) // pokemon and error no longer exist.
+    // Our code will not try to access them with this status.
+    // And in any case, In our code null and undefined have same result
+
+    // console.log('setPokemonStatus:', state, PENDING)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
@@ -55,9 +60,15 @@ function PokemonInfo({pokemonName}) {
         setPokemon(pokemon)
         setStatus(RESOLVED)
 				*/
+
         // setState({pokemon, status: RESOLVED, error: null}) // error has not changed
-        setState(prev => ({...prev, pokemon, status: RESOLVED})) // error has not changed
-        console.log('setPokemonStatus:', state, RESOLVED)
+        // setState(prev => ({...prev, pokemon, status: RESOLVED})) // error has not changed
+
+        // error property was null, now it is undefined as it no longer exists
+        //	on our object; the app never needs it when in RESOLVED state
+        setState({pokemon, status: RESOLVED}) // error property no longer exists
+
+        // console.log('setPokemonStatus:', state, RESOLVED)
       })
       .catch(error => {
         /*setStatus(REJECTED) */
@@ -66,11 +77,15 @@ function PokemonInfo({pokemonName}) {
         // errors if app grows and changes: do not "change" anything that does not need to
 
         // setState({error, status: REJECTED, pokemon: null}) // pokeman has not changed
-        setState(prev => ({...prev, error, status: REJECTED})) // pokeman has not changed
-        console.log('setPokemonStatus:', state, REJECTED)
+
+        // pokemon property was null, now it is undefined as it no longer exists
+        //	on our object; the app never needs it when in a REJECTED state
+        setState({error, status: REJECTED}) // pokeman property no longer exists
+
+        // console.log('setPokemonStatus:', state, REJECTED)
       })
 
-    return () => console.log('clean up') // no cleanup necessary
+    return //() => console.log('clean up') // no cleanup necessary
   }, [pokemonName]) // do not included pokemonStatus! Endless re-renders
 
   const {status, pokemon, error} = state
@@ -208,6 +223,31 @@ However, in this situation, it doesn’t really make much of a difference.
 */
 
 /*  SH Notes:
+
+		RE: 3. state in object
+06.extra-3 refactor: remove "null" state props
+
+		In solution video, Kent "removes" the unused state properties from the
+			object during setState calls, for the properties that (would be) set
+			to "null"	during that update and will not be used anywhere in the app
+			during that render cycle.
+
+			eg. 	  setState({status: PENDING})
+			not 	  setState({status: PENDING, pokemon: null, error: null})
+
+			pokemon and error are not used in UI (or ANYWHERE) when status is PENDING,
+							so why set it. Anyway, they are KNOWN to have a null value
+							just before the update, and null works the same as undefined
+							for our purposes, so if the app did erroneously try to access
+							those values, it would respond the virtually the same as if
+							they had been defined/set to "null", rather than being
+							undefined because they do not exist on the object
+
+			eg.			setState(prev => {...prev, status: IDLE})
+							// error and pokemon are (still) null
+
+			orig		setState({status: IDLE, pokemon: null, error: null})
+
 
 		RE: role="alert"
 		role="alert" tells screen readers to read it right away, (alert message)
