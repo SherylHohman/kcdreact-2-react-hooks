@@ -17,25 +17,25 @@ const RESOLVED = 'resolved'
 const REJECTED = 'rejected'
 
 function PokemonInfo({pokemonName}) {
-  /*   const [pokemon, setPokemon] = React.useState(null)
-  const [status, setStatus] = React.useState(IDLE)
- */
-  const [pokemonStatus, setPokemonStatus] = React.useState({
+  /* const [pokemon, setPokemon] = React.useState(null)
+     const [status, setStatus] = React.useState(IDLE)
+     const [fetchError, setFetchError] = React.useState(null)
+    */
+  const [state, setState] = React.useState({
     status: IDLE,
     pokemon: null,
+    error: null,
   })
-  const [fetchError, setFetchError] = React.useState(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
-      // setStatus(IDLE)
       return () => console.log('clean up after empty-string') // no cleanup necessary
     }
 
     /* setFetchError(null)
-    setStatus(PENDING) */
-    setPokemonStatus({pokemon: null, status: PENDING})
-    console.log('setPokemonStatus:', pokemonStatus, PENDING)
+       setStatus(PENDING) */
+    setState({status: PENDING, pokemon: null, error: null})
+    console.log('setPokemonStatus:', state, PENDING)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
@@ -54,28 +54,27 @@ function PokemonInfo({pokemonName}) {
         setPokemon(pokemon)
         setStatus(RESOLVED)
 				*/
-        setPokemonStatus({pokemon: pokemon, status: RESOLVED})
-        console.log('setPokemonStatus:', pokemonStatus, RESOLVED)
+        setState({pokemon, status: RESOLVED, error: null}) // error has not changed
+        console.log('setPokemonStatus:', state, RESOLVED)
       })
       .catch(error => {
         /*setStatus(REJECTED) */
-        setFetchError(error)
         // setPokemonStatus(prev => ({...prev, status: REJECTED}))
         // or can do like below, but in general it looks prone to introducing
         // errors if app grows and changes: do not "change" anything that does not need to
-        setPokemonStatus({pokemon: null, status: REJECTED})
-        console.log('setPokemonStatus:', pokemonStatus, REJECTED)
+        setState({error, status: REJECTED, pokemon: null}) // pokeman has not changed
+        console.log('setPokemonStatus:', state, REJECTED)
       })
 
     return () => console.log('clean up') // no cleanup necessary
-  }, [pokemonName]) // do not inclued pokemonStatus! Endless re-renders
+  }, [pokemonName]) // do not included pokemonStatus! Endless re-renders
 
-  const {status, pokemon} = pokemonStatus
+  const {status, pokemon, error} = state
   if (status === REJECTED) {
     return (
       <div role="alert">
         There was an error:{' '}
-        <pre style={{whiteSpace: 'normal'}}>{fetchError.message}</pre>
+        <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
       </div>
     )
   }
