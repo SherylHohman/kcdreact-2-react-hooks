@@ -24,7 +24,6 @@ function PokemonInfo({pokemonName}) {
 
   React.useEffect(() => {
     if (!pokemonName) {
-      // setStatus(IDLE)
       return //() => console.log('clean up after empty-string') // no cleanup necessary
     }
 
