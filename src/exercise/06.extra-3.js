@@ -32,11 +32,18 @@ function PokemonInfo({pokemonName}) {
       return //() => console.log('clean up after empty-string') // no cleanup necessary
     }
 
-    /* setFetchError(null)
-       setStatus(PENDING) */
-    // setState({status: PENDING, pokemon: null, error: null})
-    // setState({status: PENDING, pokemon: null, error: null})
+    // v1: previous exercise 06.extra-2
+    // HERE, ORDER MATTERS! in asynch calls, React cant (yet) gaurantee all are updated in the same render cycle. In actuallity in THIS particular version of THIS app, might not cause an error b/c the combo of prev values + what would try to render if any of these values are updated before others, would not create an "undefined" or unrenderable situation, I think. But it COULD, in general.
+    /* setStatus(PENDING)
+		   setPokemon(null)
+       setFetchError(null)*/
 
+    // v2: update all the properties & v3: change only changed properties
+    // setState({status: PENDING, pokemon: null, error: null})
+    /* setFetchError(null)
+       setPokemonStatus({status: PENDING, pokemon: null}) */
+
+    // v4: remove properties that are unused (and "null") by component when has this status
     setState({status: PENDING}) // pokemon and error no longer exist.
     // Our code will not try to access them with this status.
     // And in any case, In our code null and undefined have same result
@@ -57,29 +64,50 @@ function PokemonInfo({pokemonName}) {
         //	(based on status telling React which JSX to display)
         //	pokemon would not be updated until the immediately next rerender.
 
-        setPokemon(pokemon)
-        setStatus(RESOLVED)
-				*/
+				// v1: previous exercise 06.extra-2
+				// HERE, ORDER MATTERS, switch the 2 lines and a RUNTIME ERROR occurs. in asynch calls, React cant (yet) gaurantee all are updated in the same render cycle
+				/* setPokemon(pokemon)
+					 setStatus(RESOLVED)
+					*/
 
+        // v2: update all the properties
         // setState({pokemon, status: RESOLVED, error: null}) // error has not changed
+
+        // v3: update CHANGED properties, reuse UNCHANGED properties
         // setState(prev => ({...prev, pokemon, status: RESOLVED})) // error has not changed
 
-        // error property was null, now it is undefined as it no longer exists
-        //	on our object; the app never needs it when in RESOLVED state
+        // v4: remove properties that are unused (and ==="null") by component when has this status
+        //  In v3, v2, v1: we kept the `error` property at "null";
+        //  In this version, it no longer exists on our state object
+        //  ...so by def, it is "undefined".
+        //	But, the app never uses `error` property during a render when status is RESOLVED!
         setState({pokemon, status: RESOLVED}) // error property no longer exists
 
         // console.log('setPokemonStatus:', state, RESOLVED)
       })
       .catch(error => {
+        // v1: previous exercise 06.extra-2
+        // ORDER does NOT matter, because only 1 exists in this asynch call!
+        // which is why I initially left it OFF my state object during 1st v of exercise 2
         /*setStatus(REJECTED) */
-        // setPokemonStatus(prev => ({...prev, status: REJECTED}))
-        // or can do like below, but in general it looks prone to introducing
-        // errors if app grows and changes: do not "change" anything that does not need to
 
+        // v2: update all the properties
         // setState({error, status: REJECTED, pokemon: null}) // pokeman has not changed
+        //				or
+        // setPokemonStatus({status: REJECTED, pokemon: null})
+        // setFetchError(error)
 
-        // pokemon property was null, now it is undefined as it no longer exists
-        //	on our object; the app never needs it when in a REJECTED state
+        // v3: update CHANGED properties (only); reuse UNCHANGED properties
+        // setState(prev=>({...prev, error, status: REJECTED})) // pokeman has not changed
+        //				or
+        // setPokemonStatus(prev => ({...prev, status: REJECTED}))
+        // setFetchError(error)
+
+        // v4: remove properties that are unused (and ==="null") by component when has this status
+        //  In v3, v2, v1: we kept the `pokemon` property at "null";
+        //  In this version, it no longer exists on our state object
+        //  ...so by def, it is "undefined".
+        //	But, the app never uses `pokemon` property during a render when status is REJECTED!
         setState({error, status: REJECTED}) // pokeman property no longer exists
 
         // console.log('setPokemonStatus:', state, REJECTED)
@@ -225,29 +253,41 @@ However, in this situation, it doesn’t really make much of a difference.
 /*  SH Notes:
 
 		RE: 3. state in object
-06.extra-3 refactor: remove "null" state props
 
-		In solution video, Kent "removes" the unused state properties from the
-			object during setState calls, for the properties that (would be) set
-			to "null"	during that update and will not be used anywhere in the app
-			during that render cycle.
+			06.extra-3 refactor: remove "null" state from obj
 
-			eg. 	  setState({status: PENDING})
-			not 	  setState({status: PENDING, pokemon: null, error: null})
+			In solution video, Kent "removes" the unused state properties from the
+				object during setState calls, for the properties that (would be) set
+				to "null"	during that update and will not be used anywhere in the app
+				during that render cycle.
 
-			pokemon and error are not used in UI (or ANYWHERE) when status is PENDING,
-							so why set it. Anyway, they are KNOWN to have a null value
-							just before the update, and null works the same as undefined
-							for our purposes, so if the app did erroneously try to access
-							those values, it would respond the virtually the same as if
-							they had been defined/set to "null", rather than being
-							undefined because they do not exist on the object
+				eg. 	  setState({status: PENDING})
+				mine 	  setState({status: PENDING, pokemon: null, error: null})
 
-			eg.			setState(prev => {...prev, status: IDLE})
-							// error and pokemon are (still) null
+				eg.			setState({status: REJECTED, error})
+				vs			setState({status: REJECTED, error, pokemon: null})
+				or			setState(prev=>({...prev, status: REJECTED, error}))
+				In this case the previous value of pokemon was already null before setState
 
-			orig		setState({status: IDLE, pokemon: null, error: null})
+				pokemon and error are not used in UI (or ANYWHERE) when status is PENDING,
+								so why set it, or have those properties ("variables") even exist
+								(for that render), I suppose it the logic.
+								Anyway, at the time of the setState call to update the var,
+								they were KNOWN to have a null value, and null works "the same"
+								as undefined in MOST* cases, anyway it would for our use in this app.
+								So if the app did erroneously try to access those values, the
+								app and UI would respond the same as if those properties DID
+								exist on the object, and were set the the value "null", rather
+								than not existing on the object, and thus being "undefined".
+								*(Of course this depends on if "falsey"/?? comparisons are
+								being used or if === null/.? was being used -- but in that case
+								there would likely be an error anyway, because the property
+								would not even exist, so undefined on the left-hand side).
 
+				eg.			setState(prev => {...prev, status: IDLE})
+								// error and pokemon are (still) null
+
+				orig		setState({status: IDLE, pokemon: null, error: null})
 
 		RE: role="alert"
 		role="alert" tells screen readers to read it right away, (alert message)
