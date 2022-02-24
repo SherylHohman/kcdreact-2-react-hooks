@@ -34,6 +34,7 @@ function PokemonInfo({pokemonName}) {
 
     /* setFetchError(null)
        setStatus(PENDING) */
+    // setState({status: PENDING, pokemon: null, error: null})
     setState({status: PENDING, pokemon: null, error: null})
     console.log('setPokemonStatus:', state, PENDING)
 
@@ -54,7 +55,8 @@ function PokemonInfo({pokemonName}) {
         setPokemon(pokemon)
         setStatus(RESOLVED)
 				*/
-        setState({pokemon, status: RESOLVED, error: null}) // error has not changed
+        // setState({pokemon, status: RESOLVED, error: null}) // error has not changed
+        setState(prev => ({...prev, pokemon, status: RESOLVED})) // error has not changed
         console.log('setPokemonStatus:', state, RESOLVED)
       })
       .catch(error => {
@@ -62,7 +64,9 @@ function PokemonInfo({pokemonName}) {
         // setPokemonStatus(prev => ({...prev, status: REJECTED}))
         // or can do like below, but in general it looks prone to introducing
         // errors if app grows and changes: do not "change" anything that does not need to
-        setState({error, status: REJECTED, pokemon: null}) // pokeman has not changed
+
+        // setState({error, status: REJECTED, pokemon: null}) // pokeman has not changed
+        setState(prev => ({...prev, error, status: REJECTED})) // pokeman has not changed
         console.log('setPokemonStatus:', state, REJECTED)
       })
 
