@@ -45,9 +45,11 @@ function PokemonInfo({pokemonName}) {
     return () => console.log('useEffect cleanup') // no cleanup necessary
   }, [pokemonName])
 
-  // render the pokemon card
+  // render "function"
+
   if (fetchError !== null)
     return (
+      /* role="alert" tells screen readers to read it right away */
       <div role="alert">
         There was an error:{' '}
         <pre style={{whiteSpace: 'normal'}}>{fetchError.message}</pre>
@@ -57,6 +59,7 @@ function PokemonInfo({pokemonName}) {
   if (!pokemonName) return 'Submit a pokeman'
   // loading state
   if (!pokemon) return <PokemonInfoFallback name={pokemonName} />
+  // render the pokemon data
   return <PokemonDataView pokemon={pokemon} />
 }
 

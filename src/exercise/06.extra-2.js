@@ -11,7 +11,7 @@ import {
 } from '../pokemon'
 
 // fetch states (prefer CONST over strings for catching typos)
-//  even better would be to put these in a object, but that is not this lesson.
+//  even better maybe to put these in a object? So grouped togegther? eh, dunno
 const IDLE = 'idle'
 const PENDING = 'pending'
 const RESOLVED = 'resolved'
@@ -25,7 +25,7 @@ function PokemonInfo({pokemonName}) {
   React.useEffect(() => {
     if (!pokemonName) {
       // setStatus(IDLE)
-      return () => console.log('clean up after empty-string') // no cleanup necessary
+      return //() => console.log('clean up after empty-string') // no cleanup necessary
     }
 
     setPokemon(null)
@@ -35,6 +35,7 @@ function PokemonInfo({pokemonName}) {
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
+        // has to be in this order, else an error occurs! pokemon before status
         setPokemon(pokemon)
         setStatus(RESOLVED)
         console.log('setStatus:', RESOLVED)
@@ -45,10 +46,9 @@ function PokemonInfo({pokemonName}) {
         console.log('setStatus:', REJECTED)
       })
 
-    return () => console.log('clean up') // no cleanup necessary
+    return //() => console.log('clean up') // no cleanup necessary
   }, [pokemonName])
 
-  // render the pokemon card
   if (status === REJECTED) {
     return (
       <div role="alert">
@@ -59,12 +59,11 @@ function PokemonInfo({pokemonName}) {
   }
 
   if (status === IDLE) return 'Submit a pokeman'
-  // loading state
   if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
-  // show pokemon
   if (status === RESOLVED) return <PokemonDataView pokemon={pokemon} />
-  /// Whaaa?
-  return <div>Unknown Status: {status}</div>
+  throw new Error(
+    `Unknown Status: ${status}. This line of code should never be reached`,
+  )
 }
 
 function App() {
@@ -155,6 +154,10 @@ However, in this situation, it doesn’t really make much of a difference.
 */
 
 /*  SH Notes:
+
+		RE: role="alert"
+		role="alert" tells screen readers to read it right away, (alert message)
+		eg: 	<div role="alert"> ...stuff to alert... </div>
 
     RE: Why set pokemon null before fetch
       SH: Setting pokemon to null clears previous result and
