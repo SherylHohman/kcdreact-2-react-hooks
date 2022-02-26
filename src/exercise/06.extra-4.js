@@ -16,6 +16,44 @@ const PENDING = 'pending'
 const RESOLVED = 'resolved'
 const REJECTED = 'rejected'
 
+class ErrorBoundary extends React.Component {
+  // This component must wrap the Component UI that it is supposed to respond to
+  // must be created as a class Component
+
+  // constructor(props) {
+  constructor({error, pokemonName, ...props}) {
+    super(props)
+    this.state = {error: null, errorInfo: null}
+  }
+  componentDidCatch(error, errorInfo) {
+    // Catch errors in any components below and re-render with error message
+    this.setState({
+      error: error,
+      errorInfo: errorInfo,
+    })
+    // You can also log error messages to an error reporting service here
+    console.log('errorReportingService: ', error)
+
+    // this standard method allows the error to also be passed to an
+    //	error reporting service, in addition to rendering the error UI
+    //  here, I will simply add a console.log
+
+    // static getDerivedStateFromError(error, pokemanName) {
+    //   // update this component's state so that at next render this component will
+    //   //	render itself
+    //   return {hasError: true}
+    // }
+  }
+  render(pokemanName) {
+    // error UI:
+    if (this.state.hasError) {
+      return <div>"Uh oh, could not retrieve pokeman: " {pokemanName}</div>
+    }
+    // otherwise, render the usual (wrapped) UI
+    return this.props.children
+  }
+}
+
 function PokemonInfo({pokemonName}) {
   const [state, setState] = React.useState({
     status: IDLE,
@@ -25,7 +63,7 @@ function PokemonInfo({pokemonName}) {
 
   React.useEffect(() => {
     if (!pokemonName) {
-      return () => console.log('1. clean up after empty-string') // no cleanup necessary
+      return //() => console.log('1. clean up after empty-string') // no cleanup necessary
     }
 
     setState({status: PENDING}) // pokemon and error will not exist on state.
@@ -51,7 +89,7 @@ function PokemonInfo({pokemonName}) {
         setState({error, status: REJECTED}) // pokeman property will no longer exist on state
       })
     console.log('3. ...exiting useEffect')
-    return () => console.log('1. clean up') // no cleanup necessary
+    return //() => console.log('1. clean up') // no cleanup necessary
   }, [pokemonName]) // do not included `state`! Endless re-renders
   // It is ONLY b/c of console.logs that `state` is even in this function!
 
@@ -63,12 +101,16 @@ function PokemonInfo({pokemonName}) {
 
   const {status, pokemon, error} = state
   if (status === REJECTED) {
-    return (
+    /* return (
       <div role="alert">
         There was an error:{' '}
         <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
       </div>
-    )
+    ) */
+
+    // replace above with ErrorBoundry
+    // Simulate a JS, UI rendering error (ie if tried to render some undefinced thing)
+    throw new Error(error)
   }
 
   if (status === IDLE) return 'Submit a pokeman'
@@ -83,10 +125,7 @@ function App() {
   const [pokemonName, setPokemonName] = React.useState('')
 
   function handleSubmit(newPokemonName) {
-    // setPokemonName(newPokemonName)
-    // SH remove excess space, just like the API does.
-    // TODO same for input field, but without trim (unless string has ONLY whitespace)
-    setPokemonName(newPokemonName.replace(/\s+/g, ' ').trim())
+    setPokemonName(newPokemonName)
   }
 
   return (
@@ -94,7 +133,9 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <PokemonInfo pokemonName={pokemonName} />
+        <ErrorBoundary pokemonName={pokemonName}>
+          <PokemonInfo pokemonName={pokemonName} />
+        </ErrorBoundary>
       </div>
     </div>
   )
