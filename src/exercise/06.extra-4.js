@@ -20,37 +20,99 @@ class ErrorBoundary extends React.Component {
   // This component must wrap the Component UI that it is supposed to respond to
   // must be created as a class Component
 
-  // constructor(props) {
-  constructor({error, pokemonName, ...props}) {
+  // Error boundaries work like a JavaScript catch {} block, but for components.
+
+  // A class component becomes an error boundary if it defines either (or both)
+  //  of the lifecycle methods
+  //  	-	static getDerivedStateFromError() or
+  // 		-	componentDidCatch().
+
+  //Use static getDerivedStateFromError() to render a fallback UI
+  //	after an error has been thrown.
+  //Use componentDidCatch() to log error information.
+
+  // eslint calls this a useless constructor and wants me do delete it.
+  // eslint-disable-next-line no-useless-constructor
+  constructor(props) {
     super(props)
-    this.state = {error: null, errorInfo: null}
+    // define state for this component here. eg:
+    // this.state={hasError: false}
   }
-  componentDidCatch(error, errorInfo) {
-    // Catch errors in any components below and re-render with error message
-    this.setState({
-      error: error,
-      errorInfo: errorInfo,
-    })
-    // You can also log error messages to an error reporting service here
-    console.log('errorReportingService: ', error)
+  // getDerivedStateFromError does the only thing it is good for,
+  //	i.e. updates the state if an error occurs, while
+  // componentDidCatch provides side effects and can access this
+  //	component instance if needed.
 
-    // this standard method allows the error to also be passed to an
-    //	error reporting service, in addition to rendering the error UI
-    //  here, I will simply add a console.log
+  static getDerivedStateFromError(error) {
+    //   // The getDerivedStateFromError() method is invoked if some error occurs
+    //   // 	during the rendering phase of any lifecycle methods or any children
+    //   //	components. This method is used to implement the Error Boundaries for
+    //   // 	the React application. It is called during the render phase, so
+    //   // 	side-effects are not permitted in this method.
+    //   // 	For side-effects, use componentDidCatch() instead.
 
-    // static getDerivedStateFromError(error, pokemanName) {
-    //   // update this component's state so that at next render this component will
-    //   //	render itself
-    //   return {hasError: true}
+    //   // if use state, set it here eg:
+    //   // setState({hasError: true})
+    //   return {error}
     // }
+    /*
+	  getDerivedStateFromError and componentDidCatch
+		They are catching same errors but at different phases.
+
+				static getDerivedStateFromError() {
+					return { hasError: true };
+				}
+		and
+				componentDidCatch() {
+					this.setState({ hasError: true });
+				}
+		do the same thing.
+
+		However you *can* use both, with a separation of concerns, as is shown in
+			in the React docs. In that case,
+				- componentDidCatch sends message to a logging service, and
+				- getDerivedStateFromError sets state var so at next render, the
+					fallback UI shows.
+	*/
+    // componentDidCatch(error) {
+    // 		Catch errors in any components below and re-render with error message
+    // 				this.etState({
+    // 					error: error,
+    // 					errorInfo: errorInfo
+    // 				})
+    // 		You can also log error messages to an error reporting service here
+
+    //   console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
+    //   // we can simulate a fake logging service by creating a method on this
+    //   //	ErrorBoundry class component that points to console.log
+    //   //		loggingService = console.log
+
+    //   // then call this loggingService from this componentDidCatch method.
+    //   // 		eg this.loggingService(error, info.componentStack)
+    console.log('componentDidCatch', Boolean(error), error)
+    return error
   }
-  render(pokemanName) {
-    // error UI:
-    if (this.state.hasError) {
-      return <div>"Uh oh, could not retrieve pokeman: " {pokemanName}</div>
+  render(error) {
+    if (!error) {
+      // if no error, render the wrapped children, as if this wrapping componenent
+      //	did not even exist.
+      console.log('ErrorBoundary, normal render')
+      return this.props.children
     }
-    // otherwise, render the usual (wrapped) UI
-    return this.props.children
+    if (error) {
+      console.log('ErrorBoundary, error render')
+      // this error Boundary UI replaces broken, removed UI
+      // in our case, below is what we used to have in the PokemonInfo on
+      //	status===REJECTED
+      // This is the "FallbackUI". Often it will be defined in a separate
+      //	component, and that component will be placed/called below.
+      return (
+        <div role="alert">
+          There was an error:{' '}
+          <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+        </div>
+      )
+    }
   }
 }
 
@@ -69,14 +131,14 @@ function PokemonInfo({pokemonName}) {
     setState({status: PENDING}) // pokemon and error will not exist on state.
 
     // because setState is asynch, this log prints before the state values are updated
-    console.log('2. ', PENDING, '   (   updating from old state:', state)
+    // console.log('2. ', PENDING, '   (   updating from old state:', state)
 
     fetchPokemon(pokemonName)
       .then(pokemon => {
         // prettier-ignore
         // (keep on one line, please)
         // because setState is asynch, this log prints before the state values are updated
-        console.log( '4. ', RESOLVED, '   (   updating from old state:', state, '\n',)
+        // console.log( '4. ', RESOLVED, '   (   updating from old state:', state, '\n',)
 
         setState({pokemon, status: RESOLVED}) // error property no longer exists
       })
@@ -84,11 +146,11 @@ function PokemonInfo({pokemonName}) {
         // prettier-ignore
         // (keep on one line, please)
         // because setState is asynch, this log prints before the state values are updated
-        console.log( '4. ', REJECTED, '   (   updating from old state:', state, '\n',)
+        // console.log( '4. ', REJECTED, '   (   updating from old state:', state, '\n',)
 
         setState({error, status: REJECTED}) // pokeman property will no longer exist on state
       })
-    console.log('3. ...exiting useEffect')
+    // console.log('3. ...exiting useEffect')
     return //() => console.log('1. clean up') // no cleanup necessary
   }, [pokemonName]) // do not included `state`! Endless re-renders
   // It is ONLY b/c of console.logs that `state` is even in this function!
@@ -111,14 +173,14 @@ function PokemonInfo({pokemonName}) {
     // replace above with ErrorBoundry
     // Simulate a JS, UI rendering error (ie if tried to render some undefinced thing)
     throw new Error(error)
+  } else {
+    if (status === IDLE) return 'Submit a pokeman'
+    if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
+    if (status === RESOLVED) return <PokemonDataView pokemon={pokemon} />
+    throw new Error(
+      `Unknown Status: ${status}. This line of code should never be reached`,
+    )
   }
-
-  if (status === IDLE) return 'Submit a pokeman'
-  if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
-  if (status === RESOLVED) return <PokemonDataView pokemon={pokemon} />
-  throw new Error(
-    `Unknown Status: ${status}. This line of code should never be reached`,
-  )
 }
 
 function App() {
@@ -133,7 +195,7 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <ErrorBoundary pokemonName={pokemonName}>
+        <ErrorBoundary>
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
