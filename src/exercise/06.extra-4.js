@@ -118,7 +118,7 @@ class ErrorBoundary extends React.Component {
 		//    	fallback UI shows.
 		// 	- componentDidCatch sends message to a logging service, and
 	*/
-  componentDidCatch(error) {
+  componentDidCatch(error, errorInfo) {
     // 		Catch errors in any components below and re-render with error message
     // 				this.etState({
     // 					error: error,
@@ -135,7 +135,7 @@ class ErrorBoundary extends React.Component {
     //   // 		eg this.loggingService(error, info.componentStack)
 
     console.log(
-      `-- componentDidCatch (just for funsies): \n\t error${error}, errorBoundaryMessage:${this.state.errorBoundaryMessage}`,
+      `-- componentDidCatch (just for funsies): \n\t error${error} ${errorInfo}\n\t errorBoundaryMessage.message:${this.state.errorBoundaryMessage.message}`,
     )
     console.log(
       "-- Notice: componentDidCatch console.log gets called AFTER the errorBoundary UI is run and printed to the screen.\n This seems to fall in line with its usual use as a logging service--AFTER getDerivedStateFromError and the errorBoundary UI gets printed as React's first priority.",
@@ -167,11 +167,26 @@ class ErrorBoundary extends React.Component {
       //	component, and that component will be called below, with the
       //	error passed in as a prop
 
+      /*
+			// return (
+      //   <div role="alert">
+      //     There was an error:{' '}
+      //     {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
+      //   </div>
+      // )
+			*/
+
+      // Instead of above, use a passed in Fallback Component to define the
+      //	rendered UI for a Boundary error. This maes it easy to use the
+      //	ErrorBoundary component in multiple locations in the app, sort of as a
+      //	framework for errors,
+      //  and can allow for different for different rendered UI, depending on
+      //	location (ie type of error).
+      /* NOTICE ErrorFallbackComponent has 1st letter CAPITALIZED */
       return (
-        <div role="alert">
-          There was an error:{' '}
-          {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
-        </div>
+        <this.props.ErrorFallbackComponent
+          error={this.state.errorBoundaryMessage}
+        />
       )
     }
 
@@ -193,7 +208,7 @@ function PokemonInfo({pokemonName}) {
 
   React.useEffect(() => {
     if (!pokemonName) {
-      return // no cleanup necessary
+      return // no cleanup function needed
     }
 
     setState({status: PENDING}) // pokemon and error will not exist on state.
@@ -205,7 +220,7 @@ function PokemonInfo({pokemonName}) {
       .catch(fetchError => {
         setState({fetchError, status: REJECTED}) // pokeman property will no longer exist on state
       })
-    return // no cleanup necessary
+    return // no cleanup function needed
   }, [pokemonName]) // do not included `state`! else: Endless re-renders. It is
   // ONLY b/c of console.logs that `state` is even in this function!
 
@@ -224,11 +239,14 @@ function PokemonInfo({pokemonName}) {
     //     </div>
     //   )
 
-    // we want to create above, but by throwing an error instead
-    // this UI (case) shall be rendered via an error boundary
+    // we want to create/render above, but by throwing an error instead
+    // the UI (for this status) shall be rendered from an error boundary function
 
     throw fetchError
     // throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
+    // I *think* throwing a new Error creates an infinite loop. TODO: verify
+    // BTW, fetchError is already in the format of ERROR. If it was not, would
+    // 	need to pass message into ERROR function and have it create error.messate, etc
   } else {
     if (status === IDLE) return 'Submit a pokeman'
     if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
@@ -240,6 +258,20 @@ function PokemonInfo({pokemonName}) {
   }
 }
 
+function ErrorFallbackUI({error}) {
+  // This is the UI rendered as a fallback UI, during errorBoundary condition
+
+  // REM error must be destructured from props !!! props is the argument/value
+  //	passed in, NOT error!  props -> props.error OR {error} as incomming argument!
+  console.log('fallback error', error.message, error)
+  return (
+    <div role="alert">
+      There was an error:{' '}
+      {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
+    </div>
+  )
+}
+
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
 
@@ -247,12 +279,13 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
+  /* NOTICE ErrorFallbackComponent has 1st letter CAPITALIZED */
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <ErrorBoundary>
+        <ErrorBoundary ErrorFallbackComponent={ErrorFallbackUI}>
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
