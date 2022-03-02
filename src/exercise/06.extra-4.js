@@ -141,16 +141,12 @@ class ErrorBoundary extends React.Component {
       "-- Notice: componentDidCatch console.log gets called AFTER the errorBoundary UI is run and printed to the screen.\n This seems to fall in line with its usual use as a logging service--AFTER getDerivedStateFromError and the errorBoundary UI gets printed as React's first priority.",
     )
 
-    // console.log(
-    //   'componentDidCatch',
-    //   Boolean(this.state.errorBoundaryMessage),
-    //   this.state.errorBoundaryMessage,
-    // )
-
-    // return error  // WRONG! this needs to be state object format
-    // return {error}  // CORRECT, notice it is shorthand for:
-    // return {errorBoundaryMessage: error}
-    // return {error: error}
+    // can do the following in this function
+    //			this.setState( {errorBoundaryMessage: error} )
+    // though will usually update the state instead from the method:
+    //			getDerivedStateFromError(error)
+    //	and set the state from *that* function/method via its return statement:
+    //	  ie: return {errorBoundaryMessage: error}
   }
 
   render() {
@@ -179,9 +175,10 @@ class ErrorBoundary extends React.Component {
       )
     }
 
+    // else...
     // if (!error) {
-    // if no error, render the wrapped children, as if this wrapping componenent
-    //	did not even exist.
+    // if no error, then render the wrapped children,
+    //		as if this wrapping errorBoundary component did not even exist.
     console.log('ErrorBoundary, normal render')
     return this.props.children
   }
@@ -397,7 +394,7 @@ However, in this situation, it doesn’t really make much of a difference.
 					Notice how componentDidCatch() runs AFTER getDerivedStateFromError(error)
 						which makes it fine for external logging services, while
 						getDerivedStateFromError(error) is appropriate for setting state,
-						(and that state is used trigger the errorBoundary UI to render the
+						(and that state is used to trigger the errorBoundary UI to render the
 						error UI)
 
 					Remember:
