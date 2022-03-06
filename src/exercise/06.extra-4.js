@@ -36,14 +36,18 @@ class ErrorBoundary extends React.Component {
 
   constructor(props) {
     super(props)
+    // const {ErrorFallbackComponent, pokemonName, ...otherProps} = props
     // define state for this component here. eg:
     // this.state={hasError: false}
     // this.state={error: null}
-    this.state = {errorBoundaryMessage: null} // this is local, not the error
+    this.state = {errorBoundaryError: null} // this is local, not the error
     //		passed in via getDerivedStateFromError(error), yet anyway
     // Note I am NOT calling the property "state", because I want to distingish
     //   it from where the "error" IS PASSED IN
   }
+
+  // state = {errorBoundaryError: null} // this is local, not the error
+
   // * instead of using the constructor above, can instead just write the line below
   // state = {errorBoundaryMessage: null} // this is local, not the error passed in
   // state={error: null}
@@ -60,6 +64,15 @@ class ErrorBoundary extends React.Component {
   //		// 	component instance if needed.
 
   static getDerivedStateFromError(error) {
+    // error that is passed in here comes from outside, it is NOT from props
+    //	it is captured whenever an error is THROWN from a wrapped component
+    //	When that happens, React looks to see if a parent component of the one
+    //	that threw an error has one of the these two methods on it:
+    //			getDerivedStateFromError(error)
+    //			componentDidCatch(error, errorInfo)
+    //	if so, it sais, hey this is an "Error Boundary" component, and
+    //	calls this method, passing in the thrown Error object
+
     //   // The getDerivedStateFromError() method is invoked if some error occurs
     //   // 	during the rendering phase of any lifecycle methods or any children
     //   //	components. This method is used to implement the Error Boundaries for
@@ -72,7 +85,10 @@ class ErrorBoundary extends React.Component {
     // return error    // WRONG! this needs to be state object format
     // return {error}  // CORRECT, notice it is shorthand for:
     // return {error: error}
-    return {errorBoundaryMessage: error}
+
+    console.log('getDerivedStateFromProps: ')
+    console.dir(error)
+    return {errorBoundaryError: error}
 
     //	// Ah Haaaa! from video:
     //	//	>[By adding this getDerivedStateFromError method, we not only turn this
@@ -118,46 +134,56 @@ class ErrorBoundary extends React.Component {
 		//    	fallback UI shows.
 		// 	- componentDidCatch sends message to a logging service, and
 	*/
-  componentDidCatch(error, errorInfo) {
-    // 		Catch errors in any components below and re-render with error message
-    // 				this.etState({
-    // 					error: error,
-    // 					errorInfo: errorInfo
-    // 				})
-    // 		You can also log error messages to an error reporting service here
+  // componentDidCatch(error, errorInfo) {
+  // 		Catch errors in any components below and re-render with error message
+  // 				this.etState({
+  // 					error: error,
+  // 					errorInfo: errorInfo
+  // 				})
+  // 		You can also log error messages to an error reporting service here
+  //   console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
+  //   // we can simulate a fake logging service by creating a method on this
+  //   //	ErrorBoundry class component that points to console.log
+  //   //		loggingService = console.log
+  //   // then call this loggingService from this componentDidCatch method.
+  //   // 		eg this.loggingService(error, info.componentStack)
+  // console.log(
+  //   `-- componentDidCatch (just for funsies): \n\t error.message: ${error.message}, error:${error} errorInfo:${errorInfo}`,
+  //   `\n\t errorBoundaryMessage.message:${this.state.errorBoundaryMessage.message}`,
+  // )
+  // console.log(
+  //   `-- componentDidCatch (just for funsies): \n\t error.message: ${error.message}`,
+  // )
+  // console.log(`-- componentDidCatch (just for funsies): \n\t error:${error}`)
+  // console.log(
+  //   `-- componentDidCatch (just for funsies): \n\t errorInfo:${errorInfo}`,
+  // )
+  // console.log(
+  //   '-- Notice: componentDidCatch console.log gets called AFTER the errorBoundary UI is run and printed to the screen.',
+  //   "\n This seems to fall in line with its usual use as a logging service--AFTER getDerivedStateFromError and the errorBoundary UI gets printed as React's first priority.",
+  // )
+  // can do the following in this function
+  //			this.setState( {errorBoundaryMessage: error} )
+  // though will usually update the state instead from the method:
+  //			getDerivedStateFromError(error)
+  //	and set the state from *that* function/method via its return statement:
+  //	  ie: return {errorBoundaryMessage: error}
+  // }
 
-    //   console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
-    //   // we can simulate a fake logging service by creating a method on this
-    //   //	ErrorBoundry class component that points to console.log
-    //   //		loggingService = console.log
+  render(props) {
+    const theError = this.state.errorBoundaryError
+    const pokemonName = this.props.pokemonName
 
-    //   // then call this loggingService from this componentDidCatch method.
-    //   // 		eg this.loggingService(error, info.componentStack)
+    console.log('**in errorBoundary:', theError?.message, theError)
 
-    console.log(
-      `-- componentDidCatch (just for funsies): \n\t error${error} ${errorInfo}\n\t errorBoundaryMessage.message:${this.state.errorBoundaryMessage.message}`,
-    )
-    console.log(
-      "-- Notice: componentDidCatch console.log gets called AFTER the errorBoundary UI is run and printed to the screen.\n This seems to fall in line with its usual use as a logging service--AFTER getDerivedStateFromError and the errorBoundary UI gets printed as React's first priority.",
-    )
-
-    // can do the following in this function
-    //			this.setState( {errorBoundaryMessage: error} )
-    // though will usually update the state instead from the method:
-    //			getDerivedStateFromError(error)
-    //	and set the state from *that* function/method via its return statement:
-    //	  ie: return {errorBoundaryMessage: error}
-  }
-
-  render() {
-    const error = this.state.errorBoundaryMessage
-    console.log('**in errorBoundary:', error)
-
-    if (error) {
+    if (theError) {
       console.log(
-        'ErrorBoundary, error render. HA! this line *does* get printed, when do not have typos!! 	AND BELOW UI *also* GETS RENDERED',
-        error,
+        ' , error render version of ErrorBoundary UI, pokemonName:',
+        pokemonName,
+        'theError:',
+        theError,
       )
+
       // this error Boundary UI replaces any broken (children) UI.
       //  That broken UI is alsoe removed by React
       // In our case, below is what we used to have in the PokemonInfo on
@@ -185,7 +211,8 @@ class ErrorBoundary extends React.Component {
       /* NOTICE ErrorFallbackComponent has 1st letter CAPITALIZED */
       return (
         <this.props.ErrorFallbackComponent
-          error={this.state.errorBoundaryMessage}
+          error={theError}
+          pokemonName={pokemonName}
         />
       )
     }
@@ -194,7 +221,7 @@ class ErrorBoundary extends React.Component {
     // if (!error) {
     // if no error, then render the wrapped children,
     //		as if this wrapping errorBoundary component did not even exist.
-    console.log('ErrorBoundary, normal render')
+    console.log('ErrorFallbackComponent, normal render')
     return this.props.children
   }
 }
@@ -213,16 +240,27 @@ function PokemonInfo({pokemonName}) {
 
     setState({status: PENDING}) // pokemon and error will not exist on state.
 
-    fetchPokemon(pokemonName)
-      .then(pokemon => {
+    // method 1: use then/catch
+    // fetchPokemon(pokemonName)
+    //   .then(pokemon => {
+    //     setState({pokemon, status: RESOLVED}) // error property no longer exists
+    //   })
+    //   .catch(fetchError => {
+    //     setState({fetchError, status: REJECTED}) // pokeman property will no longer exist on state
+    //   })
+
+    // method 2: use then(success, failure)
+    fetchPokemon(pokemonName).then(
+      pokemon => {
         setState({pokemon, status: RESOLVED}) // error property no longer exists
-      })
-      .catch(fetchError => {
+      },
+      fetchError => {
         setState({fetchError, status: REJECTED}) // pokeman property will no longer exist on state
-      })
+      },
+    )
     return // no cleanup function needed
   }, [pokemonName]) // do not included `state`! else: Endless re-renders. It is
-  // ONLY b/c of console.logs that `state` is even in this function!
+  // ONLY if/when have console.logs that print `state` is even in this function!
 
   // RENDER
 
@@ -242,15 +280,23 @@ function PokemonInfo({pokemonName}) {
     // we want to create/render above, but by throwing an error instead
     // the UI (for this status) shall be rendered from an error boundary function
 
+    console.log(
+      `..throwing fetchError ${fetchError} because status REJECTED: ${status}`,
+    )
     throw fetchError
+    // fetchError is already in the format of ERROR object. If it was not, would
+    // 	need to pass message into ERROR function and have it create
+    //  error.message, etc
+
     // throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
     // I *think* throwing a new Error creates an infinite loop. TODO: verify
-    // BTW, fetchError is already in the format of ERROR. If it was not, would
-    // 	need to pass message into ERROR function and have it create error.messate, etc
+  } else if (status === IDLE) {
+    return 'Submit a pokeman'
+  } else if (status === PENDING) {
+    return <PokemonInfoFallback name={pokemonName} />
+  } else if (status === RESOLVED) {
+    return <PokemonDataView pokemon={pokemon} />
   } else {
-    if (status === IDLE) return 'Submit a pokeman'
-    if (status === PENDING) return <PokemonInfoFallback name={pokemonName} />
-    if (status === RESOLVED) return <PokemonDataView pokemon={pokemon} />
     throw new Error(
       `This line of code should never be reached.
 		\t Unknown Status: ${state}, ${pokemonName}.`,
@@ -258,12 +304,14 @@ function PokemonInfo({pokemonName}) {
   }
 }
 
-function ErrorFallbackUI({error}) {
+function ErrorFallbackUI({error, pokemonName}) {
   // This is the UI rendered as a fallback UI, during errorBoundary condition
 
   // REM error must be destructured from props !!! props is the argument/value
   //	passed in, NOT error!  props -> props.error OR {error} as incomming argument!
-  console.log('fallback error', error.message, error)
+
+  // console.log('fallback error UI', error.message, error)
+
   return (
     <div role="alert">
       There was an error:{' '}
@@ -279,13 +327,20 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
-  /* NOTICE ErrorFallbackComponent has 1st letter CAPITALIZED */
+  /* NOTICE: ErrorFallbackComponent has 1st letter CAPITALIZED because it
+		represents a COMPONENT (as a variable I am not positive this is REQUIRED for
+			it to work in React as expected, maybe it is, certainily it is at least a
+			convention, which I appreciate)
+	 */
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <ErrorBoundary ErrorFallbackComponent={ErrorFallbackUI}>
+        <ErrorBoundary
+          ErrorFallbackComponent={ErrorFallbackUI}
+          pokemonName={pokemonName}
+        >
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
@@ -295,7 +350,9 @@ function App() {
 
 export default App
 
-/*	06.extra-4 instructions 4. 💯 create an ErrorBoundary component
+// eslint-disable-next-line no-unused-vars
+function wrapNotesForEasyCodeFolding() {
+  /*	06.extra-4 instructions 4. 💯 create an ErrorBoundary component
 
 We’ve already solved the problem for errors in our request, we’re only handling
 	that one error. But there are a lot of different kinds of errors that can
@@ -321,8 +378,7 @@ In this extra credit, read up on ErrorBoundary components
 	you’ll need to throw error right in the function so React can hand that to
 	the error boundary. So if (status === 'rejected') throw error.
  */
-
-/*	06.extra-3 instructions 3. 💯 store the state in an object
+  /*	06.extra-3 instructions 3. 💯 store the state in an object
 
 You’ll notice that we’re calling a bunch of state updaters in a row.
 This is normally not a problem, but each call to our state updater can result
@@ -350,8 +406,7 @@ with a single React.useState call so I can update my state like this:
 		setState({status: 'resolved', pokemon})
 
 */
-
-/*	06.extra-2 instructions 2. 💯 use a status
+  /*	06.extra-2 instructions 2. 💯 use a status
 
 Our logic for what to show the user when is kind of convoluted and requires that
  we be really careful about which state we set and when.
@@ -373,8 +428,7 @@ https://kentcdodds.com/blog/stop-using-isloading-booleans
 💰 Warning: Make sure you call setPokemon before calling setStatus.
 We’ll address that more in the next extra credit.
 */
-
-/*	06.extra-1 (handle fetch errors) instructions:
+  /*	06.extra-1 (handle fetch errors) instructions:
 
 Unfortunately, sometimes things go wrong and we need to handle errors when they
 	do so we can show the user useful information.
@@ -417,8 +471,7 @@ However, in this situation, it doesn’t really make much of a difference.
 	If you want to go with the safe option, then opt for .catch.
 
 */
-
-/*  SH Notes:
+  /*  SH Notes:
 
 			06.extra-4: Error Boundary notes
 
@@ -570,3 +623,4 @@ However, in this situation, it doesn’t really make much of a difference.
         Or perhaps I misunderstand altogether, and there is no issue at all.
 
     */
+}
