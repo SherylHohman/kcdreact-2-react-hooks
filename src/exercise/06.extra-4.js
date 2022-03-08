@@ -35,36 +35,105 @@ class ErrorBoundary extends React.Component {
   // eslint-disable-next-line no-useless-constructor
 
   constructor(props) {
+    // or can do:
+    // constructor({ErrorFallbackComponent, pokemonName, ...otherProps}) {
     super(props)
     // const {ErrorFallbackComponent, pokemonName, ...otherProps} = props
     // define state for this component here. eg:
     // this.state={hasError: false}
     // this.state={error: null}
     this.state = {errorBoundaryError: null} // this is local, not the error
-    //		passed in via getDerivedStateFromError(error), yet anyway
-    // Note I am NOT calling the property "state", because I want to distingish
-    //   it from where the "error" IS PASSED IN
+    //		passed in via getDerivedStateFromError(error), YET anyway
+    // Note I am NOT calling the property `error`, because I want to distingish
+    //   it from where the "error" IS PASSED IN, at:
+    //	 getDerivedStateFromError(error) and componentDidCatch(error, errorInfo)
+    //	Normally would just *also* call it `error`, because it *will* be SET to
+    //		the same value!, via the function that recieves it, and it makes the
+    //		code simplier to write (eg. setState({error})) instead of setState(myVar: error)
+    //		and for all intents, they are essentially the same, in the end.
   }
 
-  // state = {errorBoundaryError: null} // this is local, not the error
-
-  // * instead of using the constructor above, can instead just write the line below
-  // state = {errorBoundaryMessage: null} // this is local, not the error passed in
-  // state={error: null}
-
   // * since setting state is the only thing we are using constructor for, we can
-  //	let React implicitely create the constructor function for us, and do the
-  //	following INSTEAD of above:
-  // state = {errorBoundaryMessage: null} // this is local, not the error passed in
+  //	let React implicitely create the constructor function for us, and
+  //	instead just write the line below, instead of writing the constructor function:
+  // state = {errorBoundaryMessage: null}
 
   // From docs or tutorial:
-  //		// 	getDerivedStateFromError does the only thing it is good for,
-  //		// 	i.e. updates the state if an error occurs, while
-  //		// componentDidCatch provides side effects and can access this
-  //		// 	component instance if needed.
+  //		// 	getDerivedStateFromError(error) does the only thing it is good for,
+  //		// 		i.e. updates the state if an error [in a componenet wrapped by this
+  //		//		function] occurs. [Meanwhile] (While)
+  //		// componentDidCatch(error, errorInfo) provides [a mechanism for introducting]
+  //		//		side effects [based on the error caught by this error boundary]
+  //		// 		and can access this component instance if needed.
+  //		//		[this component is where you can send the error & errorInfo to a
+  //		//		3rd party reporting service, for instance. Currently, you can also
+  //		//		also use it to set the Error Boundary state (using this.setState())
+  //		//		instead of setting it more implicitly/indirectly via
+  //		//		getDerivedStateFromError(error)].
+  //	text within [...] are my (would be) proposed edits, attempting to make
+  //		their docs clearer. TODO: consider making a PR to their docs.
+  //		Most of React docs are good. Error Boundary docs are NOT!
+  //
+  //	React looks for any component that has a function called:
+  //				** NOTE it may look only for the FIRST component above it... I
+  //						think once a (Error Boundary) component intercepts the Error
+  //						object, it handles the errant UI, and does NOT continue to pass
+  //						the Error up the tree. Of course, should the Error Boundary
+  //						*also* produce an Error (throw an Error), then THAT error
+  //						*would* propogate up looking for an ErrorBoundary component
+  //						above *it* to handle that new Error. So, I have some misnomers
+  //						in some of the text in this file!!
+  //						(propogate might also be an incorrect term.)
+  //						This note may also be incorrect. Maybe it does continue passing
+  //						the Error up the tree, but I do not think that makes sense.
+  //						Esp considering that it is a React mechanism to swap out a bad
+  //						UI rendering with something that the DOM can render.
+  //						(and that can be useful for displaying info about a thrown error
+  //						and possibly even provide an mechanism for recovering from errors.)
+  //		getDerivedStateFromError(error) AND/OR componentDidCatch(error, errorInfo<optional>)
+  //	If it finds one, React considers this component an Error Boundary Component.
+  //		and it calls that/those method(s), passing the error (an object of type Error)
+  //	Note that those two methods are called in different phases.
+  //		getDerivedStateFromError(error): before the re-render
+  //		componentDidCatch(error, errorInfo<optional>): after re-render
+  //	(TODO: re-render is inaccurate term; update word choice above.)
+  //	This occurs anytime an Error is thrown.
+  //		But the error can only be intercepted/caught by an an Error Boundary (Component)
+  //		if it originates in a component that is a CHILD to said Error Boundary.
+  //		It [The error/search for Error Boundary Component] only traverses UP from the
+  //		component that threw an Error. Errors within an Error Boundary component
+  //		cannot catch its own error. But it could be caught in another Error Boundary
+  //		component if one exists higher in the tree.
+  //	IF no Error Boundary Component wraps the Component that threw an error,
+  //		React cannot gracefully handle the error, an a "white screen of death"
+  //		and the app may crash as a result, with no feedback to the user.
+  //	Remember, the main function of the Error Boundary component is to replace
+  //		the broken UI that React cannot display, with some fallback "error" UI.
+  //		The magic that React is able to perform, when Error Boundary is defined,
+  //		is that it can seamlessly "discard" (my words, maybe not accurage)
+  //		un-Mount the broken UI internally, and re-Mount it with the replacement
+  //		UI supplied by the EB supplied by the Error Boundary render(props)
+  //		method. Thus, via this intercept mechanism, a broken UI that the DOM
+  //		is incapably of displaying, is swapped out by this FallBack UI that the
+  //		DOM CAN display.
+  //	The major payoff means that the REST of the UI renders as normal for
+  //		everything NOT wrapped by the invoked Error Boundary, and EVERYTHING
+  //		INSIDE (wrapped by, all its children) are Replaced by the Error Boundary
+  //		UI.
+  //	NOTE: You can partially see that in action by the way we write the render
+  //		function for an Error Boundary component.
+  //		if (this.steate.someErrorBoundaryStateVariable===false) {render children}
+  //		else {render this fallback UI}
+  //		Of course we usually write it in reverse: if (error) {UI} else {children}
 
   static getDerivedStateFromError(error) {
-    // error that is passed in here comes from outside, it is NOT from props
+    // error that is passed in here comes from outside. React intercepts any thrown
+    //	Errors that occur in the component's children and automatically calls this
+    //	method, supplying the error (an Error object type).
+    //	It is NOT from props, which come from our Component invocation.
+    //	This method does NOT get direct access to the props. ...CHECK
+    //	Instead, props are used ... CHECK.
+
     //	it is captured whenever an error is THROWN from a wrapped component
     //	When that happens, React looks to see if a parent component of the one
     //	that threw an error has one of the these two methods on it:
@@ -82,12 +151,46 @@ class ErrorBoundary extends React.Component {
 
     //   // if use state, set it here eg:
     //   // setState({hasError: true})
+
+    // NOTE: the return value of this method is what the state of the Error Boundary
+    //		will be set to.
+    //	React calls this.setState() for us, passing in our return value from this method.
+    //	This component's method is simply to transform the Error object it receives
+    //	into whatever format is useful for the (fallback UI) render method to use.
+
+    //  During the render phase, the component will not have direct access to the
+    //		error variable.
+    //	SO... whether or not an error occured must be stored in the ErrorBoundary's
+    //		state variable,
+    //			- so we know :
+    //			- whether to render out the fallback error boundary UI, or to
+    //			- or to render the (usual) children UI, ie when no errors were thrown
+    //			- and if we want access to any info inside the (thrown) Error object
+    //				so we can display it in the fallback UI, we must save that info
+    //				to the state object as well. We can either save the entire Error object.
+    //				or just pull specific properties from it, such as error.message.
+    //				Anything regarding the `error` that we need access to in the render
+    //				function must be transferred to the state object.
+    //		It seems this function will generally be empty. It essentially just
+    //			returns a state object, and does this instead of calling setState()
+    //			explicitely. Not sure why they designed it this way. Perhaps less
+    //			boiler plate? I'm sure experience will make it clear.
+
+    //		Notice, if do not want the UI to display any info about the error,
+    //			We still need to return, at a minimum, a Boolean value for state.
+    //			eg: return {hasError: Boolean(error)}
+    //			Then render method chooses UI based on if (this.state.hasError) / else
+
     // return error    // WRONG! this needs to be state object format
     // return {error}  // CORRECT, notice it is shorthand for:
     // return {error: error}
 
     console.log('getDerivedStateFromProps: ')
     console.dir(error)
+    console.log(
+      '\tNotice when getDerivedStateFromProps() method gets called, ',
+      '\n\t\tcompared to when componentDidCatch() gets called',
+    )
     return {errorBoundaryError: error}
 
     //	// Ah Haaaa! from video:
@@ -134,47 +237,54 @@ class ErrorBoundary extends React.Component {
 		//    	fallback UI shows.
 		// 	- componentDidCatch sends message to a logging service, and
 	*/
-  // componentDidCatch(error, errorInfo) {
-  // 		Catch errors in any components below and re-render with error message
-  // 				this.etState({
-  // 					error: error,
-  // 					errorInfo: errorInfo
-  // 				})
-  // 		You can also log error messages to an error reporting service here
-  //   console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
-  //   // we can simulate a fake logging service by creating a method on this
-  //   //	ErrorBoundry class component that points to console.log
-  //   //		loggingService = console.log
-  //   // then call this loggingService from this componentDidCatch method.
-  //   // 		eg this.loggingService(error, info.componentStack)
-  // console.log(
-  //   `-- componentDidCatch (just for funsies): \n\t error.message: ${error.message}, error:${error} errorInfo:${errorInfo}`,
-  //   `\n\t errorBoundaryMessage.message:${this.state.errorBoundaryMessage.message}`,
-  // )
-  // console.log(
-  //   `-- componentDidCatch (just for funsies): \n\t error.message: ${error.message}`,
-  // )
-  // console.log(`-- componentDidCatch (just for funsies): \n\t error:${error}`)
-  // console.log(
-  //   `-- componentDidCatch (just for funsies): \n\t errorInfo:${errorInfo}`,
-  // )
-  // console.log(
-  //   '-- Notice: componentDidCatch console.log gets called AFTER the errorBoundary UI is run and printed to the screen.',
-  //   "\n This seems to fall in line with its usual use as a logging service--AFTER getDerivedStateFromError and the errorBoundary UI gets printed as React's first priority.",
-  // )
-  // can do the following in this function
-  //			this.setState( {errorBoundaryMessage: error} )
-  // though will usually update the state instead from the method:
-  //			getDerivedStateFromError(error)
-  //	and set the state from *that* function/method via its return statement:
-  //	  ie: return {errorBoundaryMessage: error}
-  // }
+
+  componentDidCatch(error, errorInfo) {
+    //	NOTE: THIS METHOD IS ABSOLUTELY NOT NEEDED FOR THIS EXERCISE.
+    //		I am only implementing it here, for illustration purposes, to further
+    //		show how these two methods work.
+    //		It is typically used ONLY if one is using some error reporting service.
+    //		I find it interesting to see when this component is called, in contrast
+    //		to when getDerivedSateFromProps(error) is called.
+    //		This is called AFTER the component (fallback UI) has rendered.
+    //		We can see that via the console.logs I put in this function.
+    // 	Catch errors in any components below and re-render with error message
+    // 			this.etState({
+    // 				error: error,
+    // 				errorInfo: errorInfo
+    // 			})
+    // 		You can also log error messages to an error reporting service here.
+    // console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
+    //
+    //   // we can simulate a fake logging service by creating a method on this
+    //   //	ErrorBoundry class component that points to console.log:
+    //
+    //   //			loggingService = console.log
+    //	 //
+    //   // then call this loggingService from this componentDidCatch method. eg:
+    //	 //
+    //   // 		this.loggingService(error, info.componentStack)
+    //
+    console.log(
+      `-- componentDidCatch (just for funsies):`,
+      `\n\t error.message: ${error.message}, \n\terror:${error} \n\terrorInfo:${errorInfo}`,
+      `\n\t errorBoundaryError.message:${this.state.errorBoundaryError.message}`,
+      `\n\t this.state:${this.state}`,
+    )
+    console.log(`-- componentDidCatch (just for funsies):`, this.state)
+
+    // Can set state in this function:
+    //			this.setState( {errorBoundaryMessage: error} )
+    // though will usually update the state instead from the method:
+    //			getDerivedStateFromError(error)
+    // ...via its return statement, ie:
+    //	  	return {errorBoundaryMessage: error}
+  }
 
   render(props) {
     const theError = this.state.errorBoundaryError
     const pokemonName = this.props.pokemonName
 
-    console.log('**in errorBoundary:', theError?.message, theError)
+    console.log('**in errorBoundary render:', theError?.message, theError)
 
     if (theError) {
       console.log(
@@ -258,7 +368,19 @@ function PokemonInfo({pokemonName}) {
         setState({fetchError, status: REJECTED}) // pokeman property will no longer exist on state
       },
     )
+
+    // NOTE: There *is* a difference between the two methods above.
+    //	Namely, .catch will ALSO catch any errors that are thrown WITHIN the
+    //		.then statement, in addition to anything thrown from the fetch method.
+    //	Method 2 ONLY does .then OR .catch
+    //	In our case, it is Known that React.setState(), the ONLY line in .then
+    //	is gauranteed to not throw an error, so we are safe, AND they wind up
+    //	being exactly equvalent.
+    //	If we needed to catch a potential errors inside the .then statement, then
+    //	Method 1 might be preferable.
+
     return // no cleanup function needed
+    // eslint
   }, [pokemonName]) // do not included `state`! else: Endless re-renders. It is
   // ONLY if/when have console.logs that print `state` is even in this function!
 
@@ -278,7 +400,8 @@ function PokemonInfo({pokemonName}) {
     //   )
 
     // we want to create/render above, but by throwing an error instead
-    // the UI (for this status) shall be rendered from an error boundary function
+    // the UI (for REJECTED fetch status) will be rendered via the render() method
+    //	on the error boundary component that wraps this component.
 
     console.log(
       `..throwing fetchError ${fetchError} because status REJECTED: ${status}`,
@@ -310,7 +433,7 @@ function ErrorFallbackUI({error, pokemonName}) {
   // REM error must be destructured from props !!! props is the argument/value
   //	passed in, NOT error!  props -> props.error OR {error} as incomming argument!
 
-  // console.log('fallback error UI', error.message, error)
+  console.log('fallback error UI', error.message, error)
 
   return (
     <div role="alert">
