@@ -220,7 +220,7 @@ class ErrorBoundary extends React.Component {
     //	//		Lifecycle, rendering, or ??oneOtherSituation?RemWhat phases.
     //	//	)
 
-    //	//	>Then we can just return an *object* of[sic., depicting]
+    //	//	>Then we can just return an *object* [depicting]
     //	//		the state that we want this error boundary to have
     //	//		when there's an error in itself or any of its children.
 
@@ -269,9 +269,8 @@ class ErrorBoundary extends React.Component {
     // 				error: error,
     // 				errorInfo: errorInfo
     // 			})
+
     // 		You can also log error messages to an error reporting service here.
-    // console.log('SH componentDidCatch logs ErrorBoundry message:\n', error)
-    //
     //   // we can simulate a fake logging service by creating a method on this
     //   //	ErrorBoundry class component that points to console.log:
     //
@@ -284,10 +283,12 @@ class ErrorBoundary extends React.Component {
     console.log(
       `-- componentDidCatch (just for funsies):`,
       `\n\t error.message: ${error.message}, \n\terror:${error} \n\terrorInfo:${errorInfo}`,
-      `\n\t errorBoundaryError.message:${this.state.errorBoundaryError.message}`,
+      `\n\terrorInfo.componentStack: ${errorInfo.componentStack}`,
+      `\n\t errorBoundaryError.message: ${this.state.errorBoundaryError.message}`,
       `\n\t this.state:${this.state}`,
     )
     console.log(`-- componentDidCatch (just for funsies):`, this.state)
+    // the other console.log does NOT show the variable in the way it is shown on this line!
 
     // Can set state in this function:
     //			this.setState( {errorBoundaryMessage: error} )
@@ -330,7 +331,7 @@ class ErrorBoundary extends React.Component {
 			*/
 
       // Instead of above, use a passed in Fallback Component to define the
-      //	rendered UI for a Boundary error. This maes it easy to use the
+      //	rendered UI for a Boundary error. This makes it easy to use the
       //	ErrorBoundary component in multiple locations in the app, sort of as a
       //	framework for errors,
       //  and can allow for different for different rendered UI, depending on
@@ -344,10 +345,9 @@ class ErrorBoundary extends React.Component {
       )
     }
 
-    // else...
-    // if (!error) {
-    // if no error, then render the wrapped children,
-    //		as if this wrapping errorBoundary component did not even exist.
+    // else...if (!error) {
+    // 	then render the children (wrapped) components
+    //	...as if this wrapping errorBoundary component did not even exist.
     console.log('ErrorFallbackComponent, normal render')
     return this.props.children
   }
@@ -425,11 +425,13 @@ function PokemonInfo({pokemonName}) {
     )
     throw fetchError
     // fetchError is already in the format of ERROR object. If it was not, would
-    // 	need to pass message into ERROR function and have it create
-    //  error.message, etc
+    // 	need to pass the error message (in this case it is fetchError.message)
+    //	to the `Error()` function to have it create
+    //  an error object for us, with properties: error.message, etc
 
     // throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
     // I *think* throwing a new Error creates an infinite loop. TODO: verify
+    //
   } else if (status === IDLE) {
     return 'Submit a pokeman'
   } else if (status === PENDING) {
@@ -444,11 +446,11 @@ function PokemonInfo({pokemonName}) {
   }
 }
 
-function ErrorFallbackUI({error, pokemonName}) {
+function ErrorFallbackUI({error, pokemonName, ...otherProps}) {
   // This is the UI rendered as a fallback UI, during errorBoundary condition
 
-  // REM error must be destructured from props !!! props is the argument/value
-  //	passed in, NOT error!  props -> props.error OR {error} as incomming argument!
+  // REM error must be destructured from props !!! props is the argument NOT error!
+  //	either destructure props above ({error, ...props}), OR below via props.error
 
   console.log('fallback error UI', error.message, error)
 
@@ -468,9 +470,7 @@ function App() {
   }
 
   /* NOTICE: ErrorFallbackComponent has 1st letter CAPITALIZED because it
-		represents a COMPONENT (as a variable I am not positive this is REQUIRED for
-			it to work in React as expected, maybe it is, certainily it is at least a
-			convention, which I appreciate)
+		represents a COMPONENT (Not sure if this is as a convention, or is Required)
 	 */
   return (
     <div className="pokemon-info-app">
