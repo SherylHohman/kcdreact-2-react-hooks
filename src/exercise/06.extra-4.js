@@ -15,8 +15,8 @@ import {
 //	It will have commit message something like "starting code & instructions"
 //	That code comes from here, but strips most comments out.
 
-const IDLE = 'idle'
 // SH fetch states (I prefer CONST over strings for catching typos)
+const IDLE = 'idle'
 const PENDING = 'pending'
 const RESOLVED = 'resolved'
 const REJECTED = 'rejected'
@@ -59,12 +59,16 @@ class ErrorBoundary extends React.Component {
   constructor(props) {
     // or can do:
     // constructor({ErrorFallbackComponent, pokemonName, ...otherProps}) {
+
     super(props)
+
     // const {ErrorFallbackComponent, pokemonName, ...otherProps} = props
     // define state for this component here. eg:
     // this.state={hasError: false}
     // this.state={error: null}
+
     this.state = {errorBoundaryError: null} // this is local, not the error
+
     //		passed in via getDerivedStateFromError(error), YET anyway
     // Note I am NOT calling the property `error`, because I want to distingish
     //   it from where the "error" IS PASSED IN, at:
@@ -76,7 +80,7 @@ class ErrorBoundary extends React.Component {
   }
 
   // * since setting state is the only thing we are using constructor for, we can
-  //	let React implicitely create the constructor function for us, and
+  //	let React implicitly create the constructor function for us, and
   //	instead just write the line below, instead of writing the constructor function:
   // state = {errorBoundaryMessage: null}
 
@@ -288,7 +292,16 @@ class ErrorBoundary extends React.Component {
     const theError = this.state.errorBoundaryError
     const pokemonName = this.props.pokemonName
 
-    console.log('**in errorBoundary render:', theError?.message, theError)
+    console.log(
+      '**in errorBoundary render, theError.message:',
+      theError?.message,
+      'theError:',
+      theError,
+      'errorBoundary state:',
+      this.state,
+      'errorBoundary props:',
+      props,
+    )
 
     if (theError) {
       console.log(
@@ -384,8 +397,9 @@ function PokemonInfo({pokemonName}) {
 
     return // no cleanup function needed
     // eslint
-  }, [pokemonName]) // do not included `state`! else: Endless re-renders. It is
-  // ONLY if/when have console.logs that print `state` is even in this function!
+  }, [pokemonName])
+  // do not included `state` in the dependency array! else: Endless re-renders.
+  // It is ONLY if/when have console.logs that print `state` is even in this function!
 
   // RENDER
 
@@ -409,6 +423,7 @@ function PokemonInfo({pokemonName}) {
     console.log(
       `..throwing fetchError ${fetchError} because status REJECTED: ${status}`,
     )
+
     throw fetchError
     // fetchError is already in the format of ERROR object. If it was not, would
     // 	need to pass the error message (in this case it is fetchError.message)
@@ -438,7 +453,7 @@ function ErrorFallbackUI({error, pokemonName, ...otherProps}) {
   // REM error must be destructured from props !!! props is the argument NOT error!
   //	either destructure props above ({error, ...props}), OR below via props.error
 
-  console.log('fallback error UI', error.message, error)
+  console.log('fallback error UI', error?.message, error)
 
   return (
     <div role="alert">
@@ -455,9 +470,11 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
-  /* NOTICE: ErrorFallbackComponent has 1st letter CAPITALIZED because it
-		represents a COMPONENT (Not sure if this is as a convention, or is Required)
+  /* NOTICE: property `ErrorFallbackComponent` below has 1st letter CAPITALIZED
+			because it represents a COMPONENT
+			(Not sure if this is as a convention, or is Required)
 	 */
+
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
