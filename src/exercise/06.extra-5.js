@@ -29,18 +29,6 @@ class ErrorBoundary extends React.Component {
   state = {error: null}
 
   static getDerivedStateFromError(error) {
-    // error that is passed in here comes from React itself (not from the Component
-    //	definition).
-
-    //  The render phase of *this* error boundary component will not have direct
-    //		access to the error variable. So it must be saved to state.
-
-    // console.log('getDerivedStateFromProps: ')
-    // console.dir(error)
-
-    // NOTE: the return value of this method is what this Error Boundary component
-    //	state will be set to, as if called this.setState()
-
     return {error}
   }
 
@@ -48,25 +36,7 @@ class ErrorBoundary extends React.Component {
     const {error} = this.state
     const {pokemonName} = this.props
 
-    // console.log(
-    //   '**in errorBoundary render, error.message:',
-    //   error?.message,
-    //   'error:',
-    //   error,
-    //   'errorBoundary state:',
-    //   this.state,
-    //   'errorBoundary props:',
-    //   props,
-    // )
-
     if (error) {
-      // console.log(
-      //   '..render error version of ErrorBoundary UI, pokemonName:',
-      //   pokemonName,
-      //   'error:',
-      //   error,
-      // )
-
       /* NOTICE ErrorFallbackComponent has 1st letter CAPITALIZED */
       return (
         <this.props.ErrorFallbackComponent
@@ -76,8 +46,6 @@ class ErrorBoundary extends React.Component {
       )
     }
 
-    // else.. // render the children as normal, as if no errorBoundary component existed
-    console.log('ErrorFallbackComponent, normal render')
     return this.props.children
   }
 }
@@ -117,11 +85,10 @@ function PokemonInfo({pokemonName}) {
 
   const {status, pokemon, error} = state
   if (status === REJECTED) {
-    // console.log(
-    //   `..throwing error ${error} because status REJECTED: ${status}`,
-    // )
-
+    // Handle this status with an ErrorBoundary
     throw error
+
+    // state.error is already in the format of an ERROR object.
     // Or could throw a NEW Error. provide its error message, like below:
     // 		throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
     // But that causes more activity(and error logging) than simply re-throwing
@@ -159,8 +126,18 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
-  /* NOTICE: property `ErrorFallbackComponent` below has 1st letter CAPITALIZED
-			because it represents a COMPONENT
+  /* WOW, just adding key prop to ErrorBoundary, lets it remount, thus resetting
+			its state when the pokemonName changes!
+			Thus, this allows for error RECOVERY, once user UPDATES pokemonName
+				to a valid value! (well, anytime its value changes, ErrorBoundary component
+				remounts/resets! - and either a new error, or fixed component results.)
+			Since the pokemonName input is still a working component, not affected by
+				the ErrorBoundary, as it is not a child of the errorBoundary component!,
+				pokemonName can update, thus trigger remount of the ErrorBoundary component.
+	*/
+
+  /* NOTICE ErrorFallbackComponent PROP/PROPERTY has 1st letter CAPITALIZED
+						because it represents a COMPONENT
 	*/
 
   return (
@@ -458,7 +435,9 @@ function wrapNotesForEasyCodeFolding() {
             })
           })
 
-		  PREVIOUS: NOTE, I was WRONG below! (Explanation in instructions was slightly confusing to me! Dunno if it caused the same misunderstanding to others, or just to me!)
+		  PREVIOUS: NOTE, I was WRONG below! (Explanation in instructions was
+					slightly confusing to me! Dunno if it caused the same misunderstanding
+					to others, or just to me!)
 					Their solution does not use a wrapper. Why?
       I am using a wrapper because the return value for useEffect is supposed
       to be the cleanup function.
