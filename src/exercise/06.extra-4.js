@@ -430,8 +430,10 @@ function PokemonInfo({pokemonName}) {
     //	to the `Error()` function to have it create
     //  an error object for us, with properties: error.message, etc
 
-    // throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
-    // I *think* throwing a new Error creates an infinite loop. TODO: verify
+    // Or could throw a NEW Error. provide its error message, like below:
+    // 			throw new Error(`REJECTED, state: ${state}, pokemonName: ${pokemonName}`)
+    // But that causes more activity(and error logging) than simply re-throwing
+    //	the error that was passed in.
     //
   } else if (status === IDLE) {
     return 'Submit a pokeman'
