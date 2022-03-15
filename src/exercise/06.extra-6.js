@@ -17,6 +17,26 @@ const PENDING = 'pending'
 const RESOLVED = 'resolved'
 const REJECTED = 'rejected'
 
+//	This extra-credit-6 will use npm package:
+//		 	react-error-boundary
+//		 	https://github.com/bvaughn/react-error-boundary
+// 	to recover from an error boundary fallback UI.
+// 	This is easier to maintain than relying a specific key property update,
+// 	or some other mechanism, to reset an boundary state, and allow the
+// 	app to recover, and once again render the children, if the bad data
+// 	can be fixed.
+
+/* extra-5: PREVIOUS VERSION OF THE APP, via a HOMEGROWN ErrorBoundary Component:
+			WOW, just adding key prop to ErrorBoundary, lets it remount, thus resetting
+			its state when the pokemonName changes!
+			Thus, this allows for error RECOVERY, once user UPDATES pokemonName
+				to a valid value! (well, anytime its value changes, ErrorBoundary component
+				remounts/resets! - and either a new error, or fixed component results.)
+			Since the pokemonName input is still a working component, not affected by
+				the ErrorBoundary, as it is not a child of the errorBoundary component!,
+				pokemonName can update, thus trigger remount of the ErrorBoundary component.
+	*/
+
 /* SH Replacing manual ErrorBoundary with the library
 
 class ErrorBoundary extends React.Component {
@@ -62,24 +82,22 @@ function PokemonInfo({pokemonName}) {
 
     setState({status: PENDING})
 
-    // method 2: use then(success, failure) only because setState is gauranteed
-    //	to NOT ever throw an Error.
-    //	If it could, we'd be better to use method 1: .then, .catch
     fetchPokemon(pokemonName).then(
       pokemon => {
         setState({pokemon, status: RESOLVED})
       },
       error => {
+        // REM if would need to catch any errors from the RESOLVE param,
+        //	would need to use the .then(), .catch() notation instead of this
+        //	.then(resolve, error) notation
         setState({error, status: REJECTED})
       },
     )
 
     return // no cleanup function needed
-  }, [pokemonName])
-  // do not included `state` in dependancy array! else: Endless re-renders.
-  // It is ONLY if/when have console.logs that print `state` is even in this function!
+  }, [pokemonName]) //NEVER include state (even if console.log), else infinite re-renders
 
-  // RENDER
+  // RENDER PokemonInfo component:
   console.log('RENDERING state:', state)
 
   const {status, pokemon, error} = state
@@ -101,24 +119,87 @@ function PokemonInfo({pokemonName}) {
   }
 }
 
-// When used with the library react-error-boundary, it is passed the following props:
+// When used with the library react-error-boundary, this ErrorFallback function
+//	is assigned to their API prop:
+//			`FallbackComponent`
+//	This FallbackComponent (prop) is called whenever a wrapped component's UI trows an error
+//	This 'FallbackComponent' is called with the library passing in the following:
 //		error,
 //		resetErrorBoundary: a callback that is called by the library just before
-//			it tries re-rendering/ Use this to reset state.
-//		This is whatever functions were passed to onResetKeysChange and/or onReset
-//			props
+//			it tries re-rendering.
+//			Use this to reset state, or introduce side effects (eg logging)
+//			It's value is whatever function is assigned to the ErrorBoundary props:
+//			onResetKeysChange or onReset
+//		  (depending on whether onReset or onResetKeysChange is triggering the re-render)
 
 /* function ErrorFallbackUI({error, pokemonName, ...otherProps}) {
 		(previous, home grown version above, below is API for library version)
+		NOTICE the arguments below are REQUIRED by the new library, CANNOT use above
+			arguments,
 	*/
-
-function ErrorFallbackUI({error, resetErrorBoundary}) {
+function ErrorFallback({error, resetErrorBoundary}) {
+  // decided to also rename my function to follow convention, dropping the "UI" suffix
+  // See notes above on the arguments.
+  //	Not sure if could somehow pass in pokemonName. May experiment later
   return (
     <div role="alert">
       There was an error:{' '}
       {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
     </div>
   )
+}
+
+function resetErrorBoundary(nameOfPropBeingExecuted = '', pokemonName = null) {
+  //	I am assigning this function to both:
+  //		- resetKeys
+  //		- onReset
+  //	This would not normally be the case.
+
+  //	Normally, assign this function to onReset to:...
+  //	provide a custom mechanism to update bad data that caused an error to be
+  //		thrown.
+  //	It (or a sister function) could also be assigned to onResetKeysChanged
+  //		to create side effects when a simple resetKeys was sufficient to
+  //		trigger a re-render, with a reset ErrorBoundary. In this case the side
+  //		is a console.log. I imagine updating additional data/state could be
+  //		another usecase.
+  //	When assigned to onReset,
+  //  This function would be used to "MANUALLY" reset the value that caused an
+  //		error to be thrown. This function provides the programmer a mechanism
+  //		change the bad variable / fix the error when the error cannot be fixed
+  //		by a component outside the ErrorBoundary via resetKeys alone (or as an
+  //		ADDITIONAL way to do so.)
+  //		This function will NOT be called if resetKeys was automatically called.
+  //		resetKeys WILL be called after this function is executed, so this
+  //		function should change a variable that is listed in resetKeys, in order
+  //		to trigger a re-render.
+  //  This function will need to be used if the value that needs to be "fixed"
+  //		is dependant on values only accessible to children of the ErrorBoundary.
+  //		(as there would be no way for an component that is not a child of
+  //		the ErrorBoundary component to otherwise have access, thus cannot change
+  //		the offending data that triggered the error.)
+  // NOTE: Important: onReset will NOT be called when reset happens from a
+  //		change in resetKeys. Use onResetKeysChange for that.
+
+  console.log(
+    'BECAUSE in this app, pokemonName is reset by a component OUTSIDE the ErrorBoundary,',
+    '\t the ErrorBoundary was reset automatically via resetKeys !! (see docs)!',
+    '\t Hence onReset is never Called..,',
+    '\t instead onResetKeysChange had to be used to print this log.',
+    '\t as a side effect.',
+  )
+  console.log(
+    'nameOfPropBeingExecuted:',
+    nameOfPropBeingExecuted,
+    'pokemonName:',
+    pokemonName,
+  )
+  // do nothing. This is purposely an empty DoNothing function.
+  // Well, actually, I am doing a side effect: logging!
+  // It is only here for educational purposes.
+  return // none
+  // no return value used in API onResetKeysChange or onReset props
+  // (ie for functions assigned to those props, which are defined by the library)
 }
 
 function App() {
@@ -128,110 +209,25 @@ function App() {
     setPokemonName(newPokemonName)
   }
 
-  // TODO:
-  //	This exercise will use npm package:
-  //		 	react-error-boundary
-  //		 	https://github.com/bvaughn/react-error-boundary
-  // 	to recover from an error boundary fallback UI.
-  // 	This is easier to maintain than relying a specific key property update,
-  // 	or some other mechanism, to reset an boundary state, and allow the
-  // 	app to recover, and once again render the children, if the bad data
-  // 	can be fixed.
-
-  /* extra-5: PREVIOUS VERSION OF THE APP, via a HOMEGROWN ErrorBoundary Component:
-			WOW, just adding key prop to ErrorBoundary, lets it remount, thus resetting
-			its state when the pokemonName changes!
-			Thus, this allows for error RECOVERY, once user UPDATES pokemonName
-				to a valid value! (well, anytime its value changes, ErrorBoundary component
-				remounts/resets! - and either a new error, or fixed component results.)
-			Since the pokemonName input is still a working component, not affected by
-				the ErrorBoundary, as it is not a child of the errorBoundary component!,
-				pokemonName can update, thus trigger remount of the ErrorBoundary component.
-	*/
-
   // ErrorBoundary API from library uses the props:
-  // 		FallbackComponent: the function that renders the errored UI replacement.
-  //		onError: error logging or side effects, ~ React.ComponentDidCatch()
-  //		resetkeys: array of values the component has access to...
-  //			Performs similar function that our key prop did in the extra-5 version
-  //		  From docs:
-  //				Sometimes an error happens as a result of local state to the
-  //				component that's rendering the error.
-  //				[SH: in this case we can add the local state to the resetKeys array]
-  //
-  //				...the resetKeys prop which is an array of [values] ...
-  //				the ErrorBoundary ...[will] check [at] each render
-  //				(if there's currently an error state).
-  //				If any of those elements [values] change between renders, then the
-  //				ErrorBoundary will reset the state ...[, and that] will
-  //				[cause the children to] re-render ...
-  //			SH NOTE: pokemonName works here because it is changed from an element
-  //				NOT wrapped by the ErrorBoundary, AND still visible on screen when
-  //				the FallbackComponent is rendered.
-  //				So, all the user needs to do is input a valid pokemonName,
-  //					and all we need to do is put `pokemonName` in the the resetKeys array.
-  //				Otherwise, would (likely?) need to assign the API's `onReset` prop
-  //				 to a function that will update the value that caused the error to
-  //				 a "safe", error-free value, then manually reset the error state
-  //				 variable.
-  //		onResetKeys: use this in conjunction with resetKeys if needed.
-  //			If provided, it is called after resetKeys.
-  //			It's called with the arguments: prevResetKeys and resetKeys
-  //			It and can be used for additional data processing, giving access to
-  //				aforementioned the passed in data/arguments/values/state.
-  //		onReset: If the data that caused the error can only be accessed/updated
-  //			from within the ErrorBoundary itself (eg, if our pokemonName input box
-  //			was not accessible while the ErrorFallbackUI was triggered, or if the
-  //			piece of data only existed within an ErrorBoundary child, `resetKeys`
-  //			would not be able to automatically reset the errorBoundary for us.
-  //			In this case we must provide a function to manually change the troubled
-  //			data, and reset the error state. Assign that function to the
-  //			ErrorBoundary's `onReset` prop. In the docs, (confusingly) the function
-  //			that one assignes to the onReset prop is known as `resetErrorBoundary`)
-
-  function resetErrorBoundary(
-    nameOfPropBeingExecuted = '',
-    pokemonName = null,
-  ) {
-    // function resetErrorBoundary(someArgumentA, someArgumentB) {
-    // someArgumentA & someArgumentB are standing in for any number of arguments
-    //		that I can choose to call this function with. Can also be empty.
-    // Use this function to manually change the value of a variable that triggered
-    //	the thrown error.
-    //	For example, if the input box that was used to set the
-    //	pokemonName was not visible on screen when the ErrorBoundary UI was
-    //	rendered, I could put a button inside the fallbackUI that the user could
-    //	click. The onClick for that button could be assigned to this function.
-    //	This function could set pokemonName to a valid value, such as ''.
-    //	Used in conjunction with resetKeys={[pokemonName]}, now that pokemonName
-    //	has been updated, the ErrorBoundary error state would be reset, thus
-    //	recovery!
-
-    //  This function is also necessary if the value that needs to be "fixed"
-    //	is dependant on values only accessible to children of the ErrorBoundary.
-    //	Eg. If we need access to someArgumentA and someArgumentB, that do not
-    //	outside the ErrorBoundary component. ie, these values are owned by the
-    //	child that threw the error.
-
-    // NOTE: Important: onReset will NOT be called when reset happens from a
-    //		change in resetKeys. Use onResetKeysChange for that.
-
-    console.log(
-      'BECAUSE in this app, pokemonName is reset by a component OUTSIDE the ErrorBoundary,',
-      '\t the ErrorBoundary was reset automatically via resetKeys !! (see docs)!',
-      '\t Hence onReset is never Called..,',
-      '\t instead onResetKeysChange had to be used to print this log.',
-      '\t as a side effect.',
-    )
-    console.log(
-      'nameOfPropBeingExecuted:',
-      nameOfPropBeingExecuted,
-      'pokemonName:',
-      pokemonName,
-    )
-    return // do nothing. This is purposely an empty DoNothing function.
-    // it is only here for educational purposes.
-  }
+  // 		FallbackComponent:
+  //				the function that renders the errored UI replacement.
+  //		onError:
+  //				error logging or side effects, ~ React.ComponentDidCatch()
+  //		resetkeys:
+  //				array of vars to see if changed, if so reset the ErrorBoundary state.
+  //		onResetKeysChange:
+  //				if need side effects, or *anything* else to happen when
+  //				onResetKeys (automatically) reesets the ErrorBoundary, causing a
+  //				re-render. Anything we want to control/change/happen when it re-renders
+  //				Any recovery side effect.
+  //				eg. change additional state values, or other variables.
+  //				or for logging. This is the only mechanism avail to
+  //		onReset:
+  //				if need to provide a function to manually reset the variable
+  //				responsible for triggering the ErrorBoundaryFallbackUI.
+  //				?Use in conjunction with onResetKeys? I THINK onResetKeys will
+  //				be auto called after, if it successfully changed a listed key.
 
   // remember: resetKeys must be passed an ARRAY. REMEMBER THE [] !
 
@@ -246,9 +242,11 @@ function App() {
           pokemonName={pokemonName}
         > */}
 
-        {/* NOTE: onResetKeysChange AND onReset are NOT NEEDED for THIS app */}
+        {/* NOTE: onResetKeysChange AND onReset are NOT NEEDED for current
+				    version of THIS app -- it is for instructional purposes only
+				 */}
         <ErrorBoundary
-          FallbackComponent={ErrorFallbackUI}
+          FallbackComponent={ErrorFallback}
           resetKeys={[pokemonName]}
           onResetKeysChange={() =>
             resetErrorBoundary('onResetKeysChange', pokemonName)
