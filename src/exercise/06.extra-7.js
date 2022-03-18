@@ -84,65 +84,54 @@ function PokemonInfo({pokemonName}) {
 
 function ErrorFallback({error, resetErrorBoundary}) {
   //	Not sure if could somehow pass in pokemonName. May experiment later
+
+  // This time we want the user to click a button to reset the error boundary
+  //	state, before allowing the user to type in a new pokemonName.
+
+  // resetErrorBoundary is automatically passed in via the API.
+  // It is whatever function I assign to the onReset API property.
   return (
     <div role="alert">
       There was an error:{' '}
       {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
+      <button onClick={resetErrorBoundary}>Click to try again</button>
     </div>
   )
 }
 
-function resetErrorBoundary(nameOfPropBeingExecuted = '', pokemonName = null) {
-  //	I am assigning this function to both:
-  //		- resetKeys
-  //		- onReset
-  //	This would not normally be the case.
+// function resetErrorBoundary(pokemonName='hi', setPokemonName=null) {
+function resetErrorBoundary(pokemonName = 'hi', setPokemonName = null) {
+  // Assign this runction to the ErrorBoundary (library) onReset property.
+  // Use it to reset the EB state however I see fit.
+  //	It gets triggered by custom code inside my ErrorBoundary UI which calls
+  //	is set to call the API `onReset`.
 
-  //	Normally, assign this function to onReset to:...
-  //	provide a custom mechanism to update bad data that caused an error to be
-  //		thrown.
-  //	It (or a sister function) could also be assigned to onResetKeysChanged
-  //		to create side effects when a simple resetKeys was sufficient to
-  //		trigger a re-render, with a reset ErrorBoundary. In this case the side
-  //		is a console.log. I imagine updating additional data/state could be
-  //		another usecase.
-  //	When assigned to onReset,
-  //  This function would be used to "MANUALLY" reset the value that caused an
-  //		error to be thrown. This function provides the programmer a mechanism
-  //		change the bad variable / fix the error when the error cannot be fixed
-  //		by a component outside the ErrorBoundary via resetKeys alone (or as an
-  //		ADDITIONAL way to do so.)
-  //		This function will NOT be called if resetKeys was automatically called.
-  //		resetKeys WILL be called after this function is executed, so this
-  //		function should change a variable that is listed in resetKeys, in order
-  //		to trigger a re-render.
-  //  This function will need to be used if the value that needs to be "fixed"
-  //		is dependant on values only accessible to children of the ErrorBoundary.
-  //		(as there would be no way for an component that is not a child of
-  //		the ErrorBoundary component to otherwise have access, thus cannot change
-  //		the offending data that triggered the error.)
   // NOTE: Important: onReset will NOT be called when reset happens from a
-  //		change in resetKeys. Use onResetKeysChange for that.
+  //		change in resetKeys. (ie via some component outside the ErrorBoundary)
+  //		If also have an external mechanism that changes a value in `resetKeys`,
+  //		Then I would need to Use onResetKeysChange for any side effects.
+  //	  In that scenario, those outside components *also* remount.
+  //	  That scenario is what we did in the previous exercise 06.extra-6.
+
+  //	After this function runs, if a value in the resetKeys array has changed,
+  //	The EB will remount, and if the error was fixed, the children will
+  //	display! vioa! recovery.
 
   console.log(
-    'BECAUSE in this app, pokemonName is reset by a component OUTSIDE the ErrorBoundary,',
-    '\t the ErrorBoundary was reset automatically via resetKeys !! (see docs)!',
-    '\t Hence onReset is never Called..,',
-    '\t instead onResetKeysChange had to be used to print this log.',
-    '\t as a side effect.',
+    'Inside resetErrorBoundary,\n\tpokemonName:',
+    pokemonName || 'dunno',
   )
-  console.log(
-    'nameOfPropBeingExecuted:',
-    nameOfPropBeingExecuted,
-    'pokemonName:',
-    pokemonName,
-  )
-  // do nothing. This is purposely an empty DoNothing function.
-  // Well, actually, I am doing a side effect: logging!
-  // It is only here for educational purposes.
-  return // none
-  // no return value used in API onResetKeysChange or onReset props
-  // (ie for functions assigned to those props, which are defined by the library)
+
+  setPokemonName('')
+
+  // Obviously this tiny function is better to write inline in the
+  //	ErrorBoundary component call/definition.
+  //	But as "document" of my learning, I am recording comments and learning
+  //	process in these comments, which are too numerous to write inline!
+
+  return //
+  // This library API does not use a return value.
+  //onResetKeysChange or onReset props
 }
 
 function App() {
@@ -174,6 +163,12 @@ function App() {
 
   // remember: resetKeys must be passed an ARRAY. REMEMBER THE [] !
 
+  /* resetKeys={[pokemonName]} */
+  /* onResetKeysChange={() =>
+		resetErrorBoundary('onResetKeysChange', pokemonName)
+	} */
+  /* onReset={() => resetErrorBoundary(pokemonName, setPokemonName)}*/
+  /* onReset={() => setPokemonName('')} */
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
@@ -181,15 +176,12 @@ function App() {
       <div className="pokemon-info">
         {/* NOTE: onResetKeysChange AND onReset are NOT NEEDED for current
 				    version of THIS app -- it is for instructional purposes only
-				 */}
+					*/}
 
         <ErrorBoundary
           FallbackComponent={ErrorFallback}
+          onReset={resetErrorBoundary}
           resetKeys={[pokemonName]}
-          onResetKeysChange={() =>
-            resetErrorBoundary('onResetKeysChange', pokemonName)
-          }
-          onReset={() => resetErrorBoundary('onReset', pokemonName)}
         >
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
