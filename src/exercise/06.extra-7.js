@@ -169,6 +169,28 @@ function App() {
 	} */
   /* onReset={() => resetErrorBoundary(pokemonName, setPokemonName)}*/
   /* onReset={() => setPokemonName('')} */
+  /*FallbackComponent={ErrorFallback}*/
+  /* onReset={resetErrorBoundary} */
+
+  /* NOTES ON THIS WIP VERSION -- It Works! BUT...
+			..is messy, and is not using the API I WANT to use.
+			It uses fallback inline prop.
+			TODO: change it back to using FallbackComponent prop. (should be easy)
+			TODO: figure out how to use `resetErrorBoundary` prop/function instead of
+				being forced to inline that function.
+				OBVS in this case inlining a setPokemonName hook s best, I want to know
+				how to do this via calling a function that would do the same thing.
+				Dunno why it seems hard. For some reason I cannot directly access, or
+				pass in the setPokemonName hook (but I can use it with an inline call)
+			TODO: use onReset API, instead of directly calling the setPokemonName hook
+				inline, inside the fallbackRenderer (or FallbackComponent)
+				Also, how to do it in conjunction with `resetErrorBoundary` instead of
+				only using onReset as an inline function.
+
+			All of these *should* be easy. Main thing I am having trouble with is
+				having access to setPokemonName. What am I missing? Is it something basic?
+  */
+
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
@@ -179,9 +201,34 @@ function App() {
 					*/}
 
         <ErrorBoundary
-          FallbackComponent={ErrorFallback}
-          onReset={resetErrorBoundary}
           resetKeys={[pokemonName]}
+          fallbackRender={({error, resetErrorBoundary}) => (
+            <div role="alert">
+              <div>There was an error: </div>
+              {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
+              {/* <button
+                onClick={() => resetErrorBoundary(pokemonName, setPokemonName)}
+              >
+							THIS DOES NOT WORK. ERROR,
+							Cannot find a way with or without arguments, to make using a
+							resetErrorBoundary function to work
+                Click to try again
+              </button>
+							*/}
+              <button
+                onClick={() => {
+                  // this next line is why the fallbackRender is useful
+                  // resetComponentState()
+                  setPokemonName('')
+                  // though you could accomplish this with a combination
+                  // of the FallbackCallback and onReset props as well.
+                  // resetErrorBoundary()
+                }}
+              >
+                Try again
+              </button>
+            </div>
+          )}
         >
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
