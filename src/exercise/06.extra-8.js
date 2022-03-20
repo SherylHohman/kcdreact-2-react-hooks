@@ -36,9 +36,6 @@ function PokemonInfo({pokemonName}) {
         setState({pokemon, status: RESOLVED})
       },
       error => {
-        // REM if would need to catch any errors from the RESOLVE param,
-        //	would need to use the .then(), .catch() notation instead of this
-        //	.then(resolve, error) notation
         setState({error, status: REJECTED})
       },
     )
@@ -134,23 +131,6 @@ function ErrorFallbackUI({error, resetErrorBoundary}) {
 // rename func to disambiguate my func name from API param name `resetErrorBoundary`
 // function resetErrorBoundary(setPokemonName) {
 function resetErrorBoundarySH(setPokemonName) {
-  // Assign this function to the ErrorBoundary (library) onReset property.
-  // Use it to reset the EB state however I see fit.
-  //	It gets triggered by custom code inside my ErrorBoundary UI which calls
-  //	is set to call the API `onReset`.
-
-  // NOTE: Important: onReset will NOT be called when reset happens from a
-  //		change in resetKeys. (ie via some component outside the ErrorBoundary)
-  //
-  //		If also have an external mechanism that changes a value in `resetKeys`,
-  //		Then I would need to Use onResetKeysChange for any side effects.
-  //	  In that scenario, those outside components *also* remount.
-  //	  That scenario is what we did in the previous exercise 06.extra-6.
-
-  //	After this function runs, if a value in the resetKeys array has changed,
-  //	The EB will remount, and if no more errors are throwm, the children will
-  //	display instead of the EB UI! vioa! recovery.
-
   console.log('Inside resetErrorBoundarySH')
 
   setPokemonName('')
@@ -163,17 +143,13 @@ function resetErrorBoundarySH(setPokemonName) {
   return //
   // The library `resetErrorBoundary` API does not use a return value.
   // Can call this function directly from inside
-  //		fallbackRenderer or FallbackComponent
-  //	 		(ie the functions assigned to those props)
-  //
-  //			However if call it from within FallbackComponent, the argument that
-  //			needs to be passed in will likely be out of scope
-  //			(unless add it as a param,
-  //			which is not recommended -- FallbackComponent is intended to be used
-  //			in conjunction with onReset prop!!
-  //			)
-  //	OR can set it to onResetKeysChange or onReset props, to have it called
-  //	automatically, just before resetting the EB and re-rendering.
+  //		fallbackRenderer
+  // OR can use
+  //		FallbackComponent prop instead.
+  //	In that case, need to assign it to onReset props, and inside
+  //		FallbackComponent, need to call resetErrorBoundary()
+  //		WITHOUT any arguments. This func, be called with the arguments it needs,
+  //		automatically, just before resetting the EB and re-rendering.
 }
 
 function App() {
@@ -216,7 +192,7 @@ function App() {
 			remount the component. User can ignore the button, and simply enter a
 			new Pokemon Name.
 
-		onReset and resetErrorBoundary are needed only if want the user to be able
+		onReset and resetErrorBoundary: are needed only if want the user to be able
 			to click on the button in order to reset the component. With this option,
 			only the ErrorBoundary and below is re-rendered or remounted.
 			The Pokemon Name input box ?? etc is NOT remounted ????
@@ -238,6 +214,25 @@ function App() {
   //		The reset component displays the new (bad) name,
   //		The non-reset component still displays its same orig (bad) name.
 
+  // NOTE: when reset One ErrorBoundary,
+  //	the pokemonName is updated.
+  //	And since IN THIS Extra-8,
+  //	resetKeys looks for changes in pokemonName,
+  //	The BOTH errorBoundary components are remounted.
+  //	This is different from extra-7 !
+  //
+  //	If only ONE is using resetKeys
+  //	Then the one with resetKeys will always be reset if the other one is
+  //	(because it changes pokemonName to '', and resetKeys monotors for that)
+  //	But the one without resetKeys will NOT update if the one WITH
+  //	reset keys is reset. Because it will not remount unless the button
+  //	is clicked first. Because it is NOT monitoring for changes in
+  //	pokemonName OUTSIDE ITS OWN ERRORBOUNDARY!
+  //
+  //	So clicking on EITHER reset button OR changing the input/clicking link
+  //	Both EB are remounted! and both are updated.
+  //	They will be in synch no matter what.
+
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
@@ -246,40 +241,32 @@ function App() {
       <br />
       <div className="pokemon-info">
         <ErrorBoundary
+          resetKeys={[pokemonName]}
           FallbackComponent={ErrorFallbackUI}
           onReset={() => resetErrorBoundarySH(setPokemonName)}
-          /* resetKeys={[pokemonName]} */
         >
-          {/* MOVE THIS BACK INTO ABOVE AS EB PROP
-					    SO THAT UPDATING pokemonName ourside the EB (eg input box or link)
-							WILL AUTO RESET this EB & remount with the new value
-					resetKeys={[pokemonName]}
-					*/}
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
       <hr />
       Using fallbackRender:
       <br />
-      {/* MOVE THIS BACK INTO BELOW AS EB PROP
-				onReset={() => resetErrorBoundarySH(setPokemonName)}
-					FOR 3) (below) to work!!
-					BUT CANNOT have it present for 1) or 2) below to work!!
-			*/}
-      {/* Move This back into Below as EB prop
-						SO THAT UPDATING pokemonName ourside the EB (eg input box or link)
-						WILL AUTO RESET this EB & remount with the new value
-				resetKeys={[pokemonName]}
-			*/}
       <div className="pokemon-info">
+        {/* onReset={() => resetErrorBoundarySH(setPokemonName)} */}
+        {/* Above (if uncommented)
+						used for...EB reset when pokemonName is changed INSIDE the EB,
+						eg: click a button inside the FallbackComponent that changes the
+						pokemonName
+				*/}
+        {/* resetKeys used for...EB reset when pokemonName is changed OUTSIDE the EB,
+						eg: input box changes its value
+				*/}
         <ErrorBoundary
-          /* resetKeys={[pokemonName]}  */
-          /* onReset={() => resetErrorBoundarySH(setPokemonName)} */
+          resetKeys={[pokemonName]}
+          onReset={() => resetErrorBoundarySH(setPokemonName)}
           fallbackRender={({error, resetErrorBoundary}) => {
-            // NO NEED to ALSO pass in setPokemonName (API allows above only)
-            // AND do not need to: setPokemonName is
-            // ALREADY IN SCOPE when written inline here.
-            // ...as demonstrated via the console.log below
+            // (API paramaters. This library calls this function as above)
+            // NO NEED to ALSO pass in setPokemonName, it is already in scope here
             console.log(
               'using "fallbackRender" prop for the UI',
               '\n\t pokemonName:',
@@ -294,30 +281,36 @@ function App() {
                 {<pre style={{whiteSpace: 'normal'}}>{error.message}</pre>}{' '}
                 <button
                   onClick={() => {
-                    setPokemonName('')
+                    // setPokemonName('')
+                    // IF DO NOT have onReset assigned to a function that changes
+                    //	the state, must embed that code here to update the state.
+
+                    // EITHER need the line above OR need onReset to be assigned
+                    //	to a function that uses that line.
+
+                    // below used for...EB reset when pokemonName is changed here,
+                    //	INSIDE the EB.
+                    // eg: click a button inside this fallbackRender that changes the
+                    // pokemonName (via the ABOVE line, or via a
+                    //	customResetErrorBoundry function assigned to onReset)
+                    //  If used onReset, that function is what is called with the
+                    //	line below. If did not use onReset, then the generic version
+                    //	of the resetErrorBoundary() is called below to tell
+                    //	EB to remount the EB, and it is remounted with the new
+                    //	state values
+
                     resetErrorBoundary()
-                    //		AH HAA! must *also* call call resetErrorBoundary()
-                    //		 after reset state (in this case via: setPokemonName(''))
-                    //		Even though *I* do not have a custom resetErrorBoundary
-                    //		 defined, the API *DOES*
-                    //		 (REM: I define a custom resetErrorBoundary by setting
-                    //				a custom function to onReset prop,
-                    //				and/or (less often) onResetKeysChange prop
-                    //			)
-                    //		Call resetErrorBoundary() with NO arguments.
-                    //		Do this WITHOUT setting onReset to a custom function.
-                    //			(normally, if set onReset, it BECOMES/Overrides their
-                    //				generic implementation of below. This statement is not
-                    //				quite correct!! Just know that when used with fallback/render
-                    //				I should NOT assign an "resetErrorBoundary-like function"
-                    //				to onReset. I should simply inline whatever *that*
-                    //				function *would* do here, and THEN call (their generic API)
-                    //				resetErrorBoundary() function without arguments.
-                    //			)
-                    //			Because the "the custom reset function" I would otherwise
-                    //			put inside a function assigned to onReset is embeded
-                    //			in this code, (see above line: (eg: setPokemonName(''))
-                    //
+                    // above line must be called AS IS WITH NO ARGUMENTS
+                    // whether or not we assigned a function to the onReset EB prop.
+
+                    // If onReset was assigned a function, THAT function will be used
+                    //	to update EB state and remount it.
+
+                    // If onReset was NOT assigned a function, must first manually
+                    //	change the state (setPokemonName(''))
+                    //	THEN still call the above function.
+                    //	It runs a generic version that still tells the
+                    //	EB to reset and remount!
                   }}
                 >
                   Try again
