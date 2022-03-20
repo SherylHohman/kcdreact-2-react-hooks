@@ -47,7 +47,7 @@ function PokemonInfo({pokemonName}) {
   }, [pokemonName]) //NEVER include state (even if console.log), else infinite re-renders
 
   // RENDER PokemonInfo component:
-  console.log('RENDERING state:', state)
+  // console.log('RENDERING state:', state)
 
   const {status, pokemon, error} = state
   if (status === REJECTED) {
@@ -114,7 +114,13 @@ function ErrorFallbackUI({error, resetErrorBoundary}) {
 
   // resetErrorBoundary is automatically passed in via the API.
   // It is whatever function I assign to the onReset API property.
-  console.log('inside ErrorFallback.')
+  console.log(
+    'inside ErrorFallback.',
+    '\n\t pokemonName type:',
+    typeof pokemonName,
+    '\n\t setPokemonName type:',
+    typeof setPokemonName,
+  ) // hint, BOTH are UNDEFINED! they are NOT in scope, and not passed in!
 
   return (
     <div role="alert">
@@ -123,35 +129,57 @@ function ErrorFallbackUI({error, resetErrorBoundary}) {
       <button
         onClick={() => {
           // USE 1 of 3 methods:
-          // 1) directly reset necessary state directly in this function:
-          //		(setPokemonName must be passed as a prop into this
-          //			ErrorBoundaryUI function,
-          //		 AND to do that, it must also be sent as a prop on the
-          //			ErrorBoundary component.
-          //		):
-          // setPokemonName('')
-
-          //	2) call the resetErrorBoundary() function explicitely,
+          //	1) (recommended!)
+          //		 call the resetErrorBoundary() function explicitely,
           //		 passing in any necessary values (eg setPokemonName)
           //		 As above, setPokemonName must be passed in as an argument to
           //			this ErrorBoundaryUI function AND as a prop to the
           //			ErrorBoundary component.
+
           //		In this case, resetErrorBoundary must run the code to reset state
           //		(same code that would otherwise be directly called in this func
-          //		if used method 1):
+          //		if used method 2):
 
-          // resetErrorBoundary(setPokemonName)
-          //	see note at top of function. call below without arguments.
+          // 	resetErrorBoundary(setPokemonName) // NO! NOT like this.
+          // 	 call below WITHOUT arguments.
+          //	 See note at top of ErrorFallbackUI function.
+          //   The function assigned to onReset passes in the required vars.
+          //	 This invocation does not.
           resetErrorBoundary()
 
-          // 3) ???
-          //	instead, must use onReset prop, and use setPokemonName inside
-          //	the function assigned to onReset prop.
-          //	onReset prop on ErrorBoundary component uses an inline anon function
-          //		to reset the state. Whatever is assigned to onReset will
-          //		automaticlaly be called ??? Hmm. I'm unclear now, I do not remember.
-          //		would I call onReset here? onClick must be assigned to SOMEITHING!
-          //		Maybe there are only 2 options!
+          // 2) DO NOT DO IT THIS WAY.
+          //		Technically can, but better to
+          //		use the API to pass in required vars.
+          //
+          //		How to directly reset necessary state directly in this function:
+          //		(setPokemonName must be passed as a prop into this
+          //			ErrorBoundaryUI function,
+          //		 AND to do that, it must also be sent as a prop on the
+          //			ErrorBoundary component.
+          //		 THEN can call the function as below
+          //		):
+          // setPokemonName('')
+
+          // 3) DO NOT DO IT THIS WAY.
+          //		Technically can, but better to pass this
+          //		function in using the API/prop provided explicitely for this.
+          //
+          //		How to (not recommended):
+          //		directly reset necessary state directly in this function:
+          //		(setPokemonName must be passed as a prop into this
+          //			ErrorBoundaryUI function,
+          //		 AND to do that, it must also be sent as a prop on the
+          //			ErrorBoundary component.
+          //		 ADDITIONALLY, resetErrorBoundarySH FUNCTION would need
+          //			to be passed added as a param to this function
+          //		 AND passed in as a prop to the EB component.
+          //			which is what onReset prop in the API is already doing for us.
+          //
+          //		 If do this, we are 1/2 recreating onReset API, but
+          //			incompletely leaving off the part where we do not need to
+          //			pass the params in.
+          //		):
+          // resetErrorBoundarySH(setPokemonName)
         }}
       >
         Try again
@@ -176,8 +204,8 @@ function resetErrorBoundarySH(setPokemonName) {
   //	  That scenario is what we did in the previous exercise 06.extra-6.
 
   //	After this function runs, if a value in the resetKeys array has changed,
-  //	The EB will remount, and if the error was fixed, the children will
-  //	display! vioa! recovery.
+  //	The EB will remount, and if no more errors are throwm, the children will
+  //	display instead of the EB UI! vioa! recovery.
 
   console.log('Inside resetErrorBoundarySH')
 
@@ -271,36 +299,67 @@ function App() {
 				)
 	*/
 
+  // INTERESTING. Both the components re-render when only 1 has been reset.
+  //		but obviously, the non-reset component, still re-renders with the
+  //		SAME error boundary message, because its state was NOT changed/reset.
+  //		We see this, because a console.log for both gets printed.
+  //	Clarification: when RESET an EB, only THAT component gets re-rendered.
+  //		But after that, when then update PokemonName via the input box/lind
+  //		THEN both EB components are re-rendered.
+  //	  But obvs only the reset component displays the children, pokemon Info
+  //		The non-reset component re-renders the SAME bad error message.
+  //		Even if the new pokemonName is also invalid,
+  //		The reset component displays the new (bad) name,
+  //		The non-reset component still displays its same orig (bad) name.
+
   return (
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
+      Using FallbackComponent:
+      <br />
       <div className="pokemon-info">
         <ErrorBoundary
           FallbackComponent={ErrorFallbackUI}
           onReset={() => resetErrorBoundarySH(setPokemonName)}
+          /* resetKeys={[pokemonName]} */
         >
           {/* MOVE THIS BACK INTO ABOVE AS EB PROP
+					    SO THAT UPDATING pokemonName ourside the EB (eg input box or link)
+							WILL AUTO RESET this EB & remount with the new value
 					resetKeys={[pokemonName]}
 					*/}
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
       <hr />
+      Using fallbackRender:
+      <br />
       {/* MOVE THIS BACK INTO BELOW AS EB PROP
 				onReset={() => resetErrorBoundarySH(setPokemonName)}
 					FOR 3) (below) to work!!
-					BUT CANNOT have it present fo 1) or 2) below to work!!
+					BUT CANNOT have it present for 1) or 2) below to work!!
+			*/}
+      {/* Move This back into Below as EB prop
+						SO THAT UPDATING pokemonName ourside the EB (eg input box or link)
+						WILL AUTO RESET this EB & remount with the new value
+				resetKeys={[pokemonName]}
 			*/}
       <div className="pokemon-info">
         <ErrorBoundary
+          /* resetKeys={[pokemonName]}  */
           /* onReset={() => resetErrorBoundarySH(setPokemonName)} */
           fallbackRender={({error, resetErrorBoundary}) => {
-            // CANNOT pass in setPokemonName (API allows above only)
-            // But do not need to: setPokemonName is IN SCOPE from written here.
+            // NO NEED to ALSO pass in setPokemonName (API allows above only)
+            // AND do not need to: setPokemonName is
+            // ALREADY IN SCOPE when written inline here.
+            // ...as demonstrated via the console.log below
             console.log(
               'using "fallbackRender" prop for the UI',
-              setPokemonName,
+              '\n\t pokemonName:',
+              pokemonName,
+              '\n\t setPokemonName type:',
+              typeof setPokemonName,
             )
 
             return (
@@ -314,26 +373,27 @@ function App() {
                     // 1)
                     setPokemonName('')
                     resetErrorBoundary()
-                    // AH HAA! must *also* call call resetErrorBoundary()
-                    //	 after reset state (in this case via: setPokemonName(''))
-                    //	Even though *I* do not have a custom resetErrorBoundary
-                    //	 defined, the API *DOES*
-                    //	 (REM: I define a custom resetErrorBoundary by setting
-                    //			a custom function to onReset prop,
-                    //			and/or (less often) onResetKeysChange prop
-                    //		)
-                    //	Call resetErrorBoundary() with NO arguments.
-                    //	Do this WITHOUT setting onReset to a custom function.
-                    //		(normally, if set onReset, it BECOMES/Overrides their
-                    //			generic implementation of below. This statement is not
-                    //			quite correct!! Just know that when used with fallback/render
-                    //			I should NOT assign an "resetErrorBoundary-like function"
-                    //			to onReset. I should simply inline whatever *that*
-                    //			function *would* do here, and THEN call (their generic API)
-                    //			resetErrorBoundary() function without arguments.)
-                    //		Because the "the custom reset function" I would otherwise
-                    //		put inside a function assigned to onReset is embeded
-                    //		in this code, (see above line: (eg: setPokemonName('')))
+                    //		AH HAA! must *also* call call resetErrorBoundary()
+                    //		 after reset state (in this case via: setPokemonName(''))
+                    //		Even though *I* do not have a custom resetErrorBoundary
+                    //		 defined, the API *DOES*
+                    //		 (REM: I define a custom resetErrorBoundary by setting
+                    //				a custom function to onReset prop,
+                    //				and/or (less often) onResetKeysChange prop
+                    //			)
+                    //		Call resetErrorBoundary() with NO arguments.
+                    //		Do this WITHOUT setting onReset to a custom function.
+                    //			(normally, if set onReset, it BECOMES/Overrides their
+                    //				generic implementation of below. This statement is not
+                    //				quite correct!! Just know that when used with fallback/render
+                    //				I should NOT assign an "resetErrorBoundary-like function"
+                    //				to onReset. I should simply inline whatever *that*
+                    //				function *would* do here, and THEN call (their generic API)
+                    //				resetErrorBoundary() function without arguments.
+                    //			)
+                    //			Because the "the custom reset function" I would otherwise
+                    //			put inside a function assigned to onReset is embeded
+                    //			in this code, (see above line: (eg: setPokemonName(''))
                     //
                     // 2) OR (inefficient, but possible.
                     //			( #1) above is the usual usecase when using the
@@ -346,16 +406,16 @@ function App() {
                     // resetErrorBoundarySH(setPokemonName)
                     // resetErrorBoundary()
                     //
-                    // Calling my own custom function to reset the state
-                    //		(here it is resetErrorboundarySH(WITH-THE-NECESSARY-ARGUMENT)
-                    //			DOES NOT WORK _UNLESS_, as in #1) above,
-                    //	I ALSO call default resetErrorBoundary() with no arguments!
+                    //	 Calling my own custom function to reset the state
+                    //			(here it is resetErrorboundarySH(WITH-THE-NECESSARY-ARGUMENT)
+                    //				DOES NOT WORK _UNLESS_, as in #1) above,
+                    //		I ALSO call default resetErrorBoundary() with no arguments!
                     //
-                    // 	Call my defined function (it is defined as a stand alone
-                    //		function in this file, so it is within scope)
-                    // 	(note my func name has SH tacked on to the end, to
-                    //	differentiate from the API Param name)
-                    //  in this case, onReset param does not need to be defined
+                    //	 	Call my defined function (it is defined as a stand alone
+                    //			function in this file, so it is within scope)
+                    //	 	(note my func name has SH tacked on to the end, to
+                    //		differentiate from the API Param name)
+                    //	  in this case, onReset param does not need to be defined
                     //
                     // 3) OR (not common)
                     // resetErrorBoundary(setPokemonName)
@@ -392,7 +452,6 @@ function App() {
             )
           }}
         >
-          {/* Move This back into Above as EB prop resetKeys={[pokemonName]} */}
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
       </div>
