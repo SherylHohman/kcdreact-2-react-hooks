@@ -285,11 +285,16 @@ function App() {
 					*/}
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
-        <hr />
-        {/* MOVE THIS BACK INTO BELOW AS EB PROP
+      </div>
+      <hr />
+      {/* MOVE THIS BACK INTO BELOW AS EB PROP
 				onReset={() => resetErrorBoundarySH(setPokemonName)}
-				*/}
+					FOR 3) (below) to work!!
+					BUT CANNOT have it present fo 1) or 2) below to work!!
+			*/}
+      <div className="pokemon-info">
         <ErrorBoundary
+          /* onReset={() => resetErrorBoundarySH(setPokemonName)} */
           fallbackRender={({error, resetErrorBoundary}) => {
             // CANNOT pass in setPokemonName (API allows above only)
             // But do not need to: setPokemonName is IN SCOPE from written here.
@@ -307,11 +312,44 @@ function App() {
                     // Do 1 of 3:
                     //
                     // 1)
-                    // setPokemonName('')
+                    setPokemonName('')
+                    resetErrorBoundary()
+                    // AH HAA! must *also* call call resetErrorBoundary()
+                    //	 after reset state (in this case via: setPokemonName(''))
+                    //	Even though *I* do not have a custom resetErrorBoundary
+                    //	 defined, the API *DOES*
+                    //	 (REM: I define a custom resetErrorBoundary by setting
+                    //			a custom function to onReset prop,
+                    //			and/or (less often) onResetKeysChange prop
+                    //		)
+                    //	Call resetErrorBoundary() with NO arguments.
+                    //	Do this WITHOUT setting onReset to a custom function.
+                    //		(normally, if set onReset, it BECOMES/Overrides their
+                    //			generic implementation of below. This statement is not
+                    //			quite correct!! Just know that when used with fallback/render
+                    //			I should NOT assign an "resetErrorBoundary-like function"
+                    //			to onReset. I should simply inline whatever *that*
+                    //			function *would* do here, and THEN call (their generic API)
+                    //			resetErrorBoundary() function without arguments.)
+                    //		Because the "the custom reset function" I would otherwise
+                    //		put inside a function assigned to onReset is embeded
+                    //		in this code, (see above line: (eg: setPokemonName('')))
                     //
-                    // 2) OR
-                    resetErrorBoundarySH(setPokemonName)
-                    // DOES NOT WORK
+                    // 2) OR (inefficient, but possible.
+                    //			( #1) above is the usual usecase when using the
+                    //				fallbackRender prop
+                    //				This method may not be seen in the wild is possible.
+                    //				Listed here for a more complete understanding of how
+                    //				this all works/connects together.
+                    //				)
+                    //
+                    // resetErrorBoundarySH(setPokemonName)
+                    // resetErrorBoundary()
+                    //
+                    // Calling my own custom function to reset the state
+                    //		(here it is resetErrorboundarySH(WITH-THE-NECESSARY-ARGUMENT)
+                    //			DOES NOT WORK _UNLESS_, as in #1) above,
+                    //	I ALSO call default resetErrorBoundary() with no arguments!
                     //
                     // 	Call my defined function (it is defined as a stand alone
                     //		function in this file, so it is within scope)
@@ -321,9 +359,10 @@ function App() {
                     //
                     // 3) OR (not common)
                     // resetErrorBoundary(setPokemonName)
-                    // 	AND
+                    // 	AND WITH
                     // onReset={resetErrorBoundarySH(setPokemonName)}
                     //	prop added to the ErrorBoundary Component.
+                    //
                     //	Use the API prop onReset. Set:
                     // 	Note: this is exactly the same as 2) above, but uses the
                     //	API on the EB component,
@@ -552,6 +591,44 @@ function wrapNotesForEasyCodeFolding() {
 	*/
   //
   /*  SH Notes:
+
+			06.extra-7: manually reset ErrorBoundary (library) Notes:
+
+				**READ THE NOTES WITHIN THE CODE,
+				       AND the ALT METHODS which are commented out!!
+
+				Note: my solution differs from the stated exercise.
+					I have 2 PokemonInfo cards EACH wrapped in its OWN ErrorBondary.
+					They must be reset separately.
+
+				I use two different API's. Each EB uses a different EB prop to display
+					and to reset its EB state. This is visible in the code.
+
+				It is used as an educational method to demonstrate how the various
+					library API's work. I did not find their docs to be clear enough.
+					Perhaps my own React/JS understanding was partly to blame!
+					Never-the-less, I feel that examining this code, including
+					commented-out alternatives clarifies how to properly use these API's
+					and contrasts their use cases!
+
+				In this extra-7, I have REMOVED the resetKeys prop (resetKeys={[pokemonName]})
+					from the ErrorBoundary component.
+					This is so the effects of resetting the EB from within the EB alone
+					is clearer. And because this extra-7 was evidentally designed to NOT
+					include that functionality.
+					(Weird, that it has to be taken out AFTER it already was in use for
+					previous extra-credit, but it is actually better for demonstration purposes.)
+				Basically, updating pokemonName from input box will not automatically
+					reset the EB on its own, The Button inside the EB must be clicked to
+					allow the EB to reset. Only after the EB is reset, will a change in the
+					input box update the EB UI.
+					In the next extra-8, I believe it gets added back in. Probably that is
+					the only thin it does. lol.
+				In the PREVIOUS extra-6, the entire app was re-rendered, re-mounted.
+					In this version, only only re-mounted/non-triggered-EB are re-rendered
+					if pokemonName (input box) is updated.
+					And, more imporantly, we learn how to use the EB itself
+					to remount itself!
 
 			06.extra-6: react-error-boundary library Notes:
 				TLDR:
