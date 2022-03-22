@@ -88,11 +88,22 @@ function ErrorFallbackUI({error, resetErrorBoundary}) {
   )
 }
 
+/* MOVE THIS FUNCTION INSIDE APP COMPONENT!!
+   When there, setPokemonName is in scope and does NOT need to be passed in.
+	 Also, it makes sense that
+	 the OWNER OF THE STATE we are resetting is also
+	 the ownder of the function uses to reset that state !!
+	 DUH
+
 // named func to disambiguate my func name from API param name `resetErrorBoundary`
 // eslint-disable-next-line no-unused-vars
 function resetErrorBoundarySH(setPokemonName) {
+	//	This function becomes the paramater/variable inside ErrorBoundary
+	//	component, when I set its API onReset to this func.
+
   console.log('Inside resetErrorBoundarySH')
   setPokemonName('')
+
   return // N/A
   // The library `resetErrorBoundary` API does not use a return value.
   // Can call this function directly from inside
@@ -108,12 +119,50 @@ function resetErrorBoundarySH(setPokemonName) {
   //		needs b/c onReset closure calls this func with the arg, passing it in.
   // Then library resets the EB and re-renders.
 }
+*/
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
 
   function handleSubmit(newPokemonName) {
     setPokemonName(newPokemonName)
+  }
+
+  // named func to disambiguate my func name from API param name `resetErrorBoundary`
+  // eslint-disable-next-line no-unused-vars
+  //function resetErrorBoundarySH(setPokemonName) {
+  function resetErrorBoundarySH() {
+    //	This function is used inside the FallbackComponent===ErrorFallbackUI,
+    //	where it is called it via the API param/variable name: resetErrorBoundary.
+    //	It becomes the resetErrorBoundary func when I set the
+    //	EB onReset API prop equal to this func.
+
+    //	This function becomes the paramater/variable inside ErrorBoundary
+    //	component, when I set its API onReset to this func.
+
+    // See notes re: resetErrorBoundarySH() above.
+    //	This IS that function, but moved INSIDE App.
+    //	Since setPokemonName LIVES in App component, It is already in scope.
+    //	Hence does not need to be passed in!
+    //	Hence empty Param list when defined here!
+
+    console.log('Inside resetErrorBoundarySH')
+    setPokemonName('')
+
+    // return // N/A
+    // The library `resetErrorBoundary` API does not use a return value.
+    // Can call this function directly from inside
+    //		fallbackRenderer
+    //		or can assign it to onReset
+    //		either way, afterward, need to then call resetErrorBoundary(), no args,
+    //		from within the fallbackRenderer anon function.
+    // OR can use
+    //		FallbackComponent prop instead.
+    //	In that case, need to assign this func to onReset props, and inside
+    //		FallbackComponent, need to call resetErrorBoundary()
+    //		WITHOUT any arguments. This func will be called with the arguments it
+    //		needs b/c onReset closure calls this func with the arg, passing it in.
+    // Then library resets the EB and re-renders.
   }
 
   return (
@@ -129,12 +178,32 @@ function App() {
 						resetErrorBoundary() WITHOUT arguments. The below anon func closure has the arg.
 
 						onReset={() => setPokemonName('')}
+					*/}
+        {/* This WAS format when resetErrorBoundarySH was defined OUTSIDE
+							this App component.
+							Arrow function is needed so I could pass the setPokemonName function in.
 
+						onReset={() => resetErrorBoundarySH(setPokemonName)}
+					*/}
+        {/* Now that resetErrorBoundarySH Lives inside this component,
+							the same place that setPokemonName lives, I do NOT need to
+							pass setPokemonName in--it is already in scope.
+							Hence, I also do not need to wrap the function call in an anon arrow function.
+
+						onReset={() => resetErrorBoundarySH(setPokemonName)}
+						onReset={() => resetErrorBoundarySH()}
+						onReset={resetErrorBoundarySH}
+
+						TODO: rename the function to better reflect its function.
+							Yes, it becomes the resetErrorBoundary "API-ish" paramater
+							But what it does is reset the state to the original value that
+							the component had when it was initially mounted.
+							eg. handleReset // This is what the Course named it!! Good insight :-)
 					*/}
         <ErrorBoundary
           resetKeys={[pokemonName]}
           FallbackComponent={ErrorFallbackUI}
-          onReset={() => resetErrorBoundarySH(setPokemonName)}
+          onReset={resetErrorBoundarySH}
         >
           <PokemonInfo pokemonName={pokemonName} />
         </ErrorBoundary>
@@ -165,9 +234,13 @@ function App() {
                     // or
                     // resetErrorBoundarySH()
                     // or
-                    // assign onreset={resetErrorBoundarySH(setPokemonName)} as an ErrorBoundary prop
+                    // assign onReset={resetErrorBoundarySH(setPokemonName)} as an ErrorBoundary prop
+                    //  UPDATE: Now that resetErrorBoundarySH is defined inside App,
+                    //	setPokemonName no longer needs to be passed in.
+                    //	Hende, it would be called here simply as
+                    //	onReset={resetErrorBoundarySH()}
                     // or
-                    // assign onreset={setPokemonName('')} as an ErrorBoundary prop
+                    // assign onReset={setPokemonName('')} as an ErrorBoundary prop
                     //
                     // B) AND:
                     //
@@ -182,7 +255,7 @@ function App() {
                     //	change the state (setPokemonName('') or resetErrorBoundarySH())
                     //	THEN still call the above resetErrorBoundary() function.
                     //	It runs a generic version that still tells the
-                    //	EB to reset and remount!
+                    //	EB to (reset and) remount!
                   }}
                 >
                   Try again
@@ -411,6 +484,39 @@ function wrapNotesForEasyCodeFolding() {
 
 				**READ THE NOTES WITHIN THE CODE,
 				       AND the ALT METHODS which are commented out!!
+
+					UPDATE: move resetErrorBoundarysh INSIDE APP COMPONENT
+								(and rename to handleResetState or handleReset)
+
+					(below should also be changed in extra-7 and maybe earlier too)
+
+					- App owns the setPokemonName hook (and pokemonName state)
+					- resetErrorBoundary API is updating pokemonName, via setPokemonName hook.
+					- and ErrorBoundary itself is "called" from inside App
+						(even if the library is imported/defined outside it)
+
+					It makes MUCH MORE SENSE to move the function used by the EB to reset
+						the EB state, which is wholey determined by the App state!!!
+						to be defined and owned by App itself.
+					App now gets to reset its own state directly.
+						App vars/funcs (setPokemonName('')) now do not need to be passed in to
+						the resetErrorBoundary, function because they are local.
+						This simplifies the code a whole lot.
+						And simplifies the logic.
+						It just makes much more sense, once seen.
+						Forget that it is ErrorBoundary Component that is USING the
+							function assigned as the resetErrorBoundary function.
+							Look at what it does and why and who owns the state.
+							THIS is a prob a key reason there is an
+							onReset API and an resetErrorBoundary parameter!!
+
+					----
+					-	modified:   src/exercise/06.extra-8-minimalFinal.js
+					-	modified:   src/exercise/06.extra-8-pareDown.js
+					-	modified:   src/exercise/06.extra-8.js
+
+
+				PREV:
 
 				Note: my solution differs from the stated exercise.
 					I have 2 PokemonInfo cards EACH wrapped in its OWN ErrorBondary.
