@@ -2,6 +2,36 @@
 // 💯 use resetKeys
 // http://localhost:3000/isolated/exercise/06.extra-8.js
 
+/* SEE FOLLOWING VERSIONS OF THIS FILE FOR IMPROVEMENTS
+		- fewer comments and explanations and console.logs
+		- improvements in code (this version is for more newbie, hand holding code, but non idomatic,
+			and sometimes "wrong" or inefficient way of writing the code, even if it works.
+			For example sometimes an anon arrow function is used where it should not be.)
+		- fewer PokemonInfo cards, fewer alternate versions of the functions
+
+		06.extra-8.js
+			(this one. Tons of explanations, 2 PokemonInfo cards,
+			 several versions of same functions, multiple ways of doint the same thing
+			 inefficient and less idiomatic code)
+
+		06.extra-8-pareDown.js
+			(fewer explanations, fewer alternative code examples,
+			 improved code, better named functions, fewer console.logs)
+
+		06.extra-8-minimalFinal.js
+			(improved code, only 1 pokemon card, better named functions,
+			 fewest explanations, fewest alternative code examples, fewest-no console.logs)
+
+		src\final\06.extra-8.js
+				Probably BEST to just look at THIS version.
+				It is their version of the code. It is best, and
+				quite similar to my 06.extra-8-minimalFinal version.
+				But without comments and fluff. Obvs, it is the best idiomatic,
+				model example of professional code writing.
+
+
+*/
+
 import * as React from 'react'
 import {ErrorBoundary} from 'react-error-boundary'
 import {
@@ -19,7 +49,7 @@ const REJECTED = 'rejected'
 
 function PokemonInfo({pokemonName}) {
   const [state, setState] = React.useState({
-    status: IDLE,
+    status: pokemonName ? PENDING : IDLE,
     pokemon: null,
     error: null,
   })
